@@ -1,0 +1,12 @@
+/node_modules/
+/bin/
+/obj/
+/.git/
+/.vscode/
+/.vs/
+/.nyc_output/
+/coverage/
+yarn.lock
+tslint.json
+*.map
+npm-shrinkwrap.json

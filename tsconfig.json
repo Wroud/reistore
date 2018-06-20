@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "outDir": "./lib",
+    "baseUrl": "./src",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "target": "es2015",
+    "declaration": true,
+    "jsx": "react",
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noImplicitAny": false,
+    "strictNullChecks": true,
+    "noUnusedLocals": true,
+    "removeComments": false,
+    "experimentalDecorators": true,
+    "sourceMap": true,
+    "skipDefaultLibCheck": false,
+    "strict": true,
+    "lib": [
+      "es2015.iterable",
+      "es2015.generator",
+      "es6",
+      "dom"
+    ]
+  },
+  "exclude": [
+    "tests",
+    "bin",
+    "lib",
+    "node_modules",
+    "examples"
+  ]
+}
