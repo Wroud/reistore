@@ -1,4 +1,4 @@
-import { IUpdateHandler } from "interfaces";
+import { IUpdateHandler } from "./interfaces";
 export declare class UpdateHandler implements IUpdateHandler {
     private handlers;
     constructor();
