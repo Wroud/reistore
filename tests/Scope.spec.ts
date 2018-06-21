@@ -81,7 +81,7 @@ describe("Scope", () => {
         }, 2);
         store.instructor.remove(Path.fromSelector(f => f.scope.array), 0);
         expect(store.state.array.length).to.be.equal(1);
-        store.instructor.remove(Path.fromSelector(f => f.scope.array), 1);
+        store.instructor.remove(Path.fromSelector(f => f.scope.array), 0);
         expect(store.state.array.length).to.be.equal(0);
         expect(store.state).to.be.deep.equal(expectState.scope);
         expect(store.store.state).to.be.deep.equal(expectState);

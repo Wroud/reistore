@@ -75,7 +75,7 @@ export class Store<TState, T> implements IStore<TState, T> {
                     if (typeof index === "function") {
                         path.setImmutable(this.stateStore, curValue.filter(index));
                     } else {
-                        path.setImmutable(this.stateStore, curValue.filter((v, i) => i === index));
+                        path.setImmutable(this.stateStore, curValue.filter((v, i) => i !== index));
                     }
                     break;
             }

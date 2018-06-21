@@ -119,6 +119,7 @@ suite("reistate", function () {
     set('iterations', iterations);
     bench("create", function () {
         const store = new Store();
+        Path.fromSelector(f => f.scope);
     });
     const path = Path.fromSelector(f => f.scope.counter);
     const storeModify = new Store(initCounterStore);
@@ -145,6 +146,7 @@ suite("reistate", function () {
             } else {
                 transformer.remove(showPath, i.index);
             }
+            transformer.applyInstruction();
         }
     };
     bench("normalized state", function () {
