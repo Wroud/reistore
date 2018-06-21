@@ -7,3 +7,6 @@ Make state managers greate again!
 [![GitHub license](https://img.shields.io/github/license/Wroud/reistore.svg)](https://github.com/Wroud/reistore/blob/master/LICENSE)
 [![npm version](https://img.shields.io/npm/v/reistore.svg?style=flat-square)](https://www.npmjs.com/package/reistore)
 [![npm downloads](https://img.shields.io/npm/dm/reistore.svg?style=flat-square)](https://www.npmjs.com/package/reistore)
+
+## Examples
+* [Todo](https://codesandbox.io/s/github/Wroud/reistore-react/tree/master/examples/ts)
