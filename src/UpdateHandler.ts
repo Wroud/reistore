@@ -1,4 +1,4 @@
-import { IUpdateHandler } from "interfaces";
+import { IUpdateHandler } from "./interfaces";
 
 export class UpdateHandler implements IUpdateHandler {
     private handlers: Array<() => void>;

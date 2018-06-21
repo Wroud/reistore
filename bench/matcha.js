@@ -1,6 +1,6 @@
 const { createStore, combineReducers } = require("redux");
 const { createStore: efStore, createEvent: efAction } = require("effector");
-const { Store, Scope, Path } = require("../lib");
+const { Store, StoreSchema, Scope, Path } = require("../lib");
 const { InstructionType } = require("../lib/enums/InstructionType");
 
 const initCounterStore = {
@@ -118,17 +118,18 @@ suite("redux", function () {
 suite("reistate", function () {
     set('iterations', iterations);
     bench("create", function () {
-        const store = new Store();
+        const schema = new StoreSchema();
+        const store = new Store(schema);
         Path.fromSelector(f => f.scope);
     });
     const path = Path.fromSelector(f => f.scope.counter);
-    const storeModify = new Store(initCounterStore);
+    const storeModify = new Store(new StoreSchema(), initCounterStore);
     storeModify.updateHandler.subscribe(() => { });
     bench("modify", function () {
         storeModify.instructor.set(path, 1);
     });
 
-    const storeCounter = new Store(initCounterStore);
+    const storeCounter = new Store(new StoreSchema(), initCounterStore);
     storeCounter.updateHandler.subscribe(() => { });
     bench("counter reducer", function () {
         storeCounter.instructor.set(path, storeCounter.state.scope.counter + 1);
@@ -137,9 +138,10 @@ suite("reistate", function () {
 
     const newsPath = Path.fromSelector(f => f.news);
     const showPath = Path.fromSelector(f => f.show);
-    const storeNormalized = new Store(initNormalizedState);
+    const schemaNormalized = new StoreSchema();
+    const storeNormalized = new Store(schemaNormalized, initNormalizedState);
     storeNormalized.updateHandler.subscribe(() => { });
-    storeNormalized.transformator = (i, is, transformer, s) => {
+    schemaNormalized.transformator = (i, is, transformer, s) => {
         if (is(newsPath)) {
             if (i.type === InstructionType.add) {
                 transformer.add(showPath, i.value.id);
