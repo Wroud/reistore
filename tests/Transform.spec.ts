@@ -22,12 +22,15 @@ describe("Transform", () => {
     }
 
     it("two transformers with scope", () => {
-        const store = new Store<IModel, IModel>(undefined, (instruction, is, transformer, state) => {
-            if (is(Path.fromSelector(f => f.scope.value)) && instruction.value !== undefined) {
-                transformer.set(Path.fromSelector(f => f.value), instruction.value.toString());
+        const store = new Store<IModel, IModel>(undefined);
+        const scopeValue = Path.fromSelector<IModel, number>(f => f.scope.value);
+        const stateValue = Path.fromSelector<IModel, string>(f => f.value);
+        store.transformator = (instruction, is, transformer, state) => {
+            if (is(scopeValue) && instruction.value !== undefined) {
+                transformer.set(stateValue, instruction.value.toString());
             }
             transformer.applyInstruction();
-        });
+        };
         const scope = new Scope(store, Path.fromSelector(f => f.scope), (instruction, is, transformer, state) => {
             if (is(Path.fromSelector(f => f.value)) && instruction.value !== undefined) {
                 transformer.set(Path.fromSelector(f => f.scope.value), parseInt(instruction.value));

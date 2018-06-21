@@ -1,6 +1,6 @@
 {
   "name": "reistore",
-  "version": "0.0.1",
+  "version": "1.0.1",
   "description": "Functional state manager for immutable state with relationships",
   "main": "lib/index.js",
   "module": "lib/index.js",
@@ -27,17 +27,18 @@
     "build": "tsc",
     "test": "nyc mocha --opts mocha.opts",
     "test:local": "mocha --opts mocha.opts",
-    "posttest": "nyc report --reporter=json && codecov --disable=gcov -f coverage/coverage-final.json"
+    "posttest": "nyc report --reporter=json && codecov --disable=gcov -f coverage/coverage-final.json",
+    "bench": "matcha ./bench/matcha.js"
   },
   "repository": {
     "type": "git",
-    "url": "some repo"
+    "url": "https://github.com/Wroud/reistore.git"
   },
   "release": {
     "branch": "master"
   },
   "publishConfig": {
-    "tag": "alpha"
+    "tag": "latest"
   },
   "nyc": {
     "extension": [
@@ -60,10 +61,9 @@
       "json"
     ]
   },
-  "dependencies": {
-    "typescript": "^2.9.2"
-  },
+  "dependencies": {},
   "devDependencies": {
+    "typescript": "^2.9.2",
     "@types/node": "^10.3.4",
     "@types/chai": "^4.1.2",
     "@types/chai-arrays": "^1.0.2",
@@ -80,6 +80,8 @@
     "nyc": "^6.6.1",
     "tslint": "^5.10.0",
     "ts-node": "^5.0.1",
-    "matcha": "^0.7.0"
+    "matcha": "^0.7.0",
+    "effector": "^0.17.7",
+    "redux": "*"
   }
 }
