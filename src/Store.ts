@@ -1,54 +1,30 @@
 import { InstructionType } from "./enums/InstructionType";
 import { Instructor } from "./Instructor";
-import { IInstruction, IInstructor, IPath, IStore, Transformator, IUpdateHandler, IScope } from "./interfaces";
-import { exchangeIterator } from "./tools";
-import { Transformer } from "./Transformer";
+import { IInstruction, IInstructor, IStoreSchema, IUpdateHandler } from "./interfaces";
 import { UpdateHandler } from "./UpdateHandler";
+import { IStore } from "./interfaces/IStore";
 
-export class Store<TState, T> implements IStore<TState, T> {
+export class Store<TState> implements IStore<TState> {
     instructor: IInstructor<TState>;
-    transformator!: Transformator<TState, T>;
     updateHandler: IUpdateHandler;
+    private schema: IStoreSchema<TState, TState>;
     private stateStore: TState;
-    private scopes: IScope<TState, T, any>[];
-    constructor(initState: T = {} as any, transformator?: Transformator<TState, T>) {
-        this.stateStore = initState as any;
-        this.transformator = transformator as any;
+    constructor(schema: IStoreSchema<TState, TState>, initState?: TState) {
+        this.schema = schema;
+        if (initState === undefined) {
+            this.stateStore = {} as any;
+        } else {
+            this.stateStore = initState;
+        }
         this.instructor = new Instructor(this);
         this.updateHandler = new UpdateHandler();
-        this.scopes = [];
     }
     get state() {
-        return this.stateStore as any;
-    }
-    transform(instructions: IterableIterator<IInstruction<TState, any>>) {
-        if (this.transformator === undefined) {
-            for (const scope of this.scopes) {
-                instructions = scope.transform(instructions);
-            }
-            return instructions;
-        }
-        instructions = exchangeIterator(
-            instructions,
-            instruction => {
-                const transformer = new Transformer(instruction);
-                this.transformator(
-                    instruction,
-                    this.isInstruction(instruction),
-                    transformer,
-                    this.stateStore as any
-                );
-                return transformer.toIterator();
-            }
-        );
-        for (const scope of this.scopes) {
-            instructions = scope.transform(instructions);
-        }
-        return instructions;
+        return this.stateStore;
     }
     update(instructions: IterableIterator<IInstruction<TState, any>>) {
-        instructions = this.transform(instructions);
         this.stateStore = { ...this.stateStore as any };
+        instructions = this.schema.transform(this.stateStore, instructions);
         for (const { type, path, value, index } of instructions) {
             let curValue;
             switch (type) {
@@ -81,17 +57,5 @@ export class Store<TState, T> implements IStore<TState, T> {
             }
         }
         this.updateHandler.update();
-    }
-    addScope(scope: IScope<TState, T, any>) {
-        this.scopes.push(scope);
-    }
-    removeScope(scope: IScope<TState, T, any>) {
-        const id = this.scopes.indexOf(scope);
-        if (id > -1) {
-            this.scopes.splice(id, 1);
-        }
-    }
-    protected isInstruction = (instruction: IInstruction<TState, any>) => (path: IPath<TState, any>, strict?: boolean) => {
-        return instruction.path.includes(path, strict);
     }
 }

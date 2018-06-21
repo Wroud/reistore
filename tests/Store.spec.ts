@@ -3,6 +3,7 @@ import "mocha";
 
 import { Path } from "../src/Path";
 import { Store } from "../src/Store";
+import { StoreSchema } from "../src/StoreSchema";
 
 describe("Store", () => {
     interface IArray {
@@ -21,7 +22,8 @@ describe("Store", () => {
     }
 
     it("set", () => {
-        const store = new Store<IModel, IModel>();
+        const schema = new StoreSchema<IModel, IModel>();
+        const store = new Store<IModel>(schema);
         const expectedState = {
             scope: {
                 array: [
@@ -37,7 +39,8 @@ describe("Store", () => {
     });
 
     it("add", () => {
-        const store = new Store<IModel, IModel>();
+        const schema = new StoreSchema<IModel, IModel>();
+        const store = new Store<IModel>(schema);
         const expectedState = {
             scope: {
                 array: [
@@ -72,7 +75,8 @@ describe("Store", () => {
             }
         };
         const expectState = { scope: { array: [] } };
-        const store = new Store<IModel, IModel>(init as any);
+        const schema = new StoreSchema<IModel, IModel>();
+        const store = new Store<IModel>(schema, init as any);
         store.instructor.add(Path.fromSelector(f => f.scope.array), {
             number: 6
         }, 2);
@@ -84,7 +88,8 @@ describe("Store", () => {
     });
 
     it("set number index to object", () => {
-        const store = new Store<IModel, IModel>({ scope: { indexedArray: {} } } as any);
+        const schema = new StoreSchema<IModel, IModel>();
+        const store = new Store<IModel>(schema, { scope: { indexedArray: {} } } as any);
         const expectedState = {
             scope: {
                 indexedArray: {

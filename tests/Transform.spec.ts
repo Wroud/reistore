@@ -3,6 +3,7 @@ import "mocha";
 
 import { Path } from "../src/Path";
 import { Store } from "../src/Store";
+import { StoreSchema } from "../src/StoreSchema";
 import { Scope } from "../src/Scope";
 
 describe("Transform", () => {
@@ -22,16 +23,17 @@ describe("Transform", () => {
     }
 
     it("two transformers with scope", () => {
-        const store = new Store<IModel, IModel>(undefined);
+        const schema = new StoreSchema<IModel, IModel>();
+        const store = new Store<IModel>(schema);
         const scopeValue = Path.fromSelector<IModel, number>(f => f.scope.value);
         const stateValue = Path.fromSelector<IModel, string>(f => f.value);
-        store.transformator = (instruction, is, transformer, state) => {
+        schema.transformator = (instruction, is, transformer, state) => {
             if (is(scopeValue) && instruction.value !== undefined) {
                 transformer.set(stateValue, instruction.value.toString());
             }
             transformer.applyInstruction();
         };
-        const scope = new Scope(store, Path.fromSelector(f => f.scope), (instruction, is, transformer, state) => {
+        const scope = new Scope(schema, Path.fromSelector(f => f.scope), (instruction, is, transformer, state) => {
             if (is(Path.fromSelector(f => f.value)) && instruction.value !== undefined) {
                 transformer.set(Path.fromSelector(f => f.scope.value), parseInt(instruction.value));
             }
@@ -49,13 +51,13 @@ describe("Transform", () => {
                 value: 1
             }
         }
-        scope.instructor.set(Path.fromSelector(f => f.scope.value), 0);
-        expect(scope.state.value).to.be.equal(0);
+        store.instructor.set(Path.fromSelector(f => f.scope.value), 0);
+        expect(store.state.scope.value).to.be.equal(0);
         expect(store.state.value).to.be.equal("0");
         expect(store.state).to.be.deep.equal(expectedState);
 
         store.instructor.set(Path.fromSelector(f => f.value), "1");
-        expect(scope.state.value).to.be.equal(1);
+        expect(store.state.scope.value).to.be.equal(1);
         expect(store.state.value).to.be.equal("1");
         expect(store.state).to.be.deep.equal(expectedState1);
     });

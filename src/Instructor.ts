@@ -1,9 +1,10 @@
 import { InstructionType } from "./enums/InstructionType";
-import { IInstructor, IPath, IStore } from "./interfaces";
+import { IInstructor, IPath } from "./interfaces";
+import { IStore } from "./interfaces/IStore";
 
 export class Instructor<TState> implements IInstructor<TState> {
-    private store: IStore<TState, any>;
-    constructor(store: IStore<TState, any>) {
+    private store: IStore<TState>;
+    constructor(store: IStore<TState>) {
         this.store = store;
     }
     set<TValue>(path: IPath<TState, TValue>, value: TValue) {

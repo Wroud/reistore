@@ -1,25 +1,22 @@
-import { IScope, IInstruction, IPath, IStore, Transformator } from "./interfaces";
-import { Store } from "./Store";
+import { IScope, IPath, IStoreSchema, Transformator } from "./interfaces";
+import { StoreSchema } from "./StoreSchema";
 
-export class Scope<TState, TModel, TScope> extends Store<TState, TScope> implements IScope<TState, TModel, TScope> {
-    parent: IStore<TState, TModel>;
-    store: IStore<TState, TState>;
+export class Scope<TState, TModel, TScope> extends StoreSchema<TState, TScope> implements IScope<TState, TModel, TScope> {
+    parent: IStoreSchema<TState, TModel>;
+    store: IStoreSchema<TState, TState>;
     path: IPath<TState, TScope>;
-    constructor(parent: IStore<TState, TModel>, path: IPath<TState, TScope>, transformator?: Transformator<TState, TScope>) {
-        super(undefined, transformator);;
+    constructor(parent: IStoreSchema<TState, TModel>, path: IPath<TState, TScope>, transformator?: Transformator<TState, TScope>) {
+        super(transformator);
         this.parent = parent;
         this.store = isScope<TState, any, TModel>(parent) ? parent.store : (parent as any);
         this.path = path;
         this.parent.addScope(this);
     }
-    get state() {
-        return this.path.get(this.store.state, {} as TScope) as TScope;
+    getState(state: TState) {
+        return this.path.get(state, {} as TScope) as TScope;
     }
     createScope<TNewScope>(scope: IPath<TScope, TNewScope>, transformator?: Transformator<TState, TNewScope>): IScope<TState, TScope, TNewScope> {
         return new Scope(this, this.path.join(scope), transformator);
-    }
-    update(instructions: IterableIterator<IInstruction<TState, any>>) {
-        this.store.update(instructions);
     }
 }
 

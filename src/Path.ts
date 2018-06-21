@@ -1,10 +1,6 @@
 import { isArray, isNumber } from "util";
 import { IPath, PathSelector, IPathInstruction } from "./interfaces/IPath";
 
-// export interface IPath<TModel, TValue> extends Path<TModel, TValue> {
-//     new(selector: PathSelector<TModel, TValue>, path: string, instructions: IPathInstruction[]): Path<TModel, TValue>;
-// }
-
 export class Path<TModel, TValue> implements IPath<TModel, TValue> {
     static fromSelector<TModel, TValue>(selector: PathSelector<TModel, TValue>) {
         const { path, instructions } = getPathInstructions(selector, {});
