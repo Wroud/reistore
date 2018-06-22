@@ -1,6 +1,6 @@
 const { createStore, combineReducers } = require("redux");
 const { createStore: efStore, createEvent: efAction } = require("effector");
-const { Store, StoreSchema, Scope, Path } = require("../lib");
+const { Store, StoreSchema, Scope, Path, Instructor } = require("../lib");
 const { InstructionType } = require("../lib/enums/InstructionType");
 
 const initCounterStore = {
@@ -121,17 +121,17 @@ suite("reistate", function () {
 
     const newsPath = Path.fromSelector(f => f.news);
     const showPath = Path.fromSelector(f => f.show);
-    const schemaNormalized = new StoreSchema();
-    schemaNormalized.transformator = (i, is, transformer, s) => {
+    function* transformer(instruction, is, state) {
         if (is(newsPath)) {
-            if (i.type === InstructionType.add) {
-                transformer.add(showPath, i.value.id);
+            if (instruction.type === InstructionType.add) {
+                yield Instructor.createAdd(showPath, instruction.value.id);
             } else {
-                transformer.remove(showPath, i.index);
+                yield Instructor.createRemove(showPath, instruction.index);
             }
         }
-        transformer.applyInstruction();
-    };
+        yield instruction;
+    }
+    const schemaNormalized = new StoreSchema(transformer);
 
     const storeNormalized = new Store(schemaNormalized, { ...initNormalizedState });
     storeNormalized.updateHandler.subscribe(() => { });

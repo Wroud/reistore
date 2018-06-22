@@ -1,6 +1,5 @@
 import { IInstruction, IPath, IStoreSchema, Transformator, IScope } from "./interfaces";
 import { exchangeIterator } from "./tools";
-import { Transformer } from "./Transformer";
 
 export class StoreSchema<TState, T> implements IStoreSchema<TState, T> {
     transformator!: Transformator<TState, T>;
@@ -21,16 +20,11 @@ export class StoreSchema<TState, T> implements IStoreSchema<TState, T> {
         }
         instructions = exchangeIterator(
             instructions,
-            instruction => {
-                const transformer = new Transformer(instruction);
-                this.transformator(
-                    instruction,
-                    this.isInstruction(instruction),
-                    transformer,
-                    this.getState(state)
-                );
-                return transformer.toIterator();
-            }
+            instruction => this.transformator(
+                instruction,
+                this.isInstruction(instruction),
+                this.getState(state)
+            )
         );
         for (const scope of this.scopes) {
             instructions = scope.transform(state, instructions);
