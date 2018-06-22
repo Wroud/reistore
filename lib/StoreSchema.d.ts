@@ -9,3 +9,4 @@ export declare class StoreSchema<TState, T> implements IStoreSchema<TState, T> {
     removeScope(scope: IScope<TState, T, any>): void;
     protected isInstruction: (instruction: IInstruction<TState, any>) => (path: IPath<TState, any>, strict?: boolean | undefined) => boolean;
 }
+export declare function createSchema<TState, T>(transformator?: Transformator<TState, T>): StoreSchema<TState, T>;

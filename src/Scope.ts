@@ -20,6 +20,10 @@ export class Scope<TState, TModel, TScope> extends StoreSchema<TState, TScope> i
     }
 }
 
+export function createScope<TState, TModel, TScope>(parent: IStoreSchema<TState, TModel>, path: IPath<TState, TScope>, transformator?: Transformator<TState, TScope>) {
+    return new Scope(parent, path, transformator);
+}
+
 export function isScope<TStore, TModel, TScope>(object): object is IScope<TStore, TModel, TScope> {
     return "path" in object;
 }

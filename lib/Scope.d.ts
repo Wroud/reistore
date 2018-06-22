@@ -8,4 +8,5 @@ export declare class Scope<TState, TModel, TScope> extends StoreSchema<TState, T
     getState(state: TState): TScope;
     createScope<TNewScope>(scope: IPath<TScope, TNewScope>, transformator?: Transformator<TState, TNewScope>): IScope<TState, TScope, TNewScope>;
 }
+export declare function createScope<TState, TModel, TScope>(parent: IStoreSchema<TState, TModel>, path: IPath<TState, TScope>, transformator?: Transformator<TState, TScope>): Scope<TState, TModel, TScope>;
 export declare function isScope<TStore, TModel, TScope>(object: any): object is IScope<TStore, TModel, TScope>;

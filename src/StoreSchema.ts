@@ -44,3 +44,7 @@ export class StoreSchema<TState, T> implements IStoreSchema<TState, T> {
         return instruction.path.includes(path, strict);
     }
 }
+
+export function createSchema<TState, T>(transformator?: Transformator<TState, T>) {
+    return new StoreSchema(transformator);
+}

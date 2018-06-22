@@ -5,6 +5,7 @@ import { Path } from "../src/Path";
 import { Store } from "../src/Store";
 import { StoreSchema } from "../src/StoreSchema";
 import { Scope } from "../src/Scope";
+import { Instructor } from "../src/Instructor";
 
 describe("Transform", () => {
     interface IArray {
@@ -23,22 +24,23 @@ describe("Transform", () => {
     }
 
     it("two transformers with scope", () => {
-        const schema = new StoreSchema<IModel, IModel>();
+        function* transformer(instruction, is, state) {
+            if (is(scopeValue) && instruction.value !== undefined) {
+                yield Instructor.createSet(stateValue, instruction.value.toString());
+            }
+            yield instruction;
+        }
+        const schema = new StoreSchema<IModel, IModel>(transformer);
         const store = new Store<IModel>(schema);
         const scopeValue = Path.fromSelector<IModel, number>(f => f.scope.value);
         const stateValue = Path.fromSelector<IModel, string>(f => f.value);
-        schema.transformator = (instruction, is, transformer, state) => {
-            if (is(scopeValue) && instruction.value !== undefined) {
-                transformer.set(stateValue, instruction.value.toString());
-            }
-            transformer.applyInstruction();
-        };
-        const scope = new Scope(schema, Path.fromSelector(f => f.scope), (instruction, is, transformer, state) => {
+        function* scopeTransformer(instruction, is, state) {
             if (is(Path.fromSelector(f => f.value)) && instruction.value !== undefined) {
-                transformer.set(Path.fromSelector(f => f.scope.value), parseInt(instruction.value));
+                yield Instructor.createSet(Path.fromSelector(f => f.scope.value), parseInt(instruction.value));
             }
-            transformer.applyInstruction();
-        });
+            yield instruction;
+        }
+        const scope = new Scope(schema, Path.fromSelector(f => f.scope), scopeTransformer);
         const expectedState = {
             value: "0",
             scope: {
