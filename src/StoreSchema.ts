@@ -23,7 +23,8 @@ export class StoreSchema<TState, T> implements IStoreSchema<TState, T> {
             instruction => this.transformator(
                 instruction,
                 this.isInstruction(instruction),
-                this.getState(state)
+                this.getState(state),
+                state
             )
         );
         for (const scope of this.scopes) {
