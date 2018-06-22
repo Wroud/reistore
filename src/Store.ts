@@ -29,16 +29,47 @@ export class Store<TState> implements IStore<TState> {
             let curValue;
             switch (type) {
                 case InstructionType.set:
-                    path.setImmutable(this.stateStore, value);
-                    break;
-                case InstructionType.add:
-                    curValue = path.get(this.stateStore, []) as any[];
                     if (typeof index === "function") {
+                        curValue = path.get(this.stateStore, []) as any[];
+                        if (!Array.isArray(curValue)) {
+                            const newIndex = (index as (array: any[]) => number | string)(curValue);
+                            path.setImmutable(this.stateStore, { ...curValue, [newIndex]: value });
+                            break;
+                        }
                         const newValue = [...curValue];
                         const newIndex = (index as (array: any[]) => number | string)(curValue);
                         newValue[newIndex] = value;
                         path.setImmutable(this.stateStore, newValue);
                     } else if (index !== undefined) {
+                        curValue = path.get(this.stateStore, []) as any[];
+                        if (!Array.isArray(curValue)) {
+                            path.setImmutable(this.stateStore, { ...curValue, [index]: value });
+                            break;
+                        }
+                        const newValue = [...curValue];
+                        newValue[index] = value;
+                        path.setImmutable(this.stateStore, newValue);
+                    } else {
+                        path.setImmutable(this.stateStore, value);
+                    }
+                    break;
+                case InstructionType.add:
+                    curValue = path.get(this.stateStore, []) as any[];
+                    if (typeof index === "function") {
+                        if (!Array.isArray(curValue)) {
+                            const newIndex = (index as (array: any[]) => number | string)(curValue);
+                            path.setImmutable(this.stateStore, { ...curValue, [newIndex]: value });
+                            break;
+                        }
+                        const newValue = [...curValue];
+                        const newIndex = (index as (array: any[]) => number | string)(curValue);
+                        newValue[newIndex] = value;
+                        path.setImmutable(this.stateStore, newValue);
+                    } else if (index !== undefined) {
+                        if (!Array.isArray(curValue)) {
+                            path.setImmutable(this.stateStore, { ...curValue, [index]: value });
+                            break;
+                        }
                         const newValue = [...curValue];
                         newValue[index] = value;
                         path.setImmutable(this.stateStore, newValue);
@@ -47,11 +78,22 @@ export class Store<TState> implements IStore<TState> {
                     }
                     break;
                 case InstructionType.remove:
+                    if (index === undefined) {
+                        break;
+                    }
                     curValue = path.get(this.stateStore, []) as any[];
-                    if (typeof index === "function") {
-                        path.setImmutable(this.stateStore, curValue.filter(index));
+                    if (!Array.isArray(curValue)) {
+                        const id = typeof index === "function"
+                            ? (index as any)(curValue)
+                            : index;
+                        const { [id]: _, ...newValue } = curValue;
+                        path.setImmutable(this.stateStore, newValue);
                     } else {
-                        path.setImmutable(this.stateStore, curValue.filter((v, i) => i !== index));
+                        if (typeof index === "function") {
+                            path.setImmutable(this.stateStore, curValue.filter(index));
+                        } else {
+                            path.setImmutable(this.stateStore, curValue.filter((v, i) => i !== index));
+                        }
                     }
                     break;
             }
