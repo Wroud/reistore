@@ -12,6 +12,19 @@ const initNormalizedState = {
     news: {},
     show: []
 };
+const deepState = {
+    scope0: {
+        scope1: {
+            scope2: {
+                scope3: {
+                    scope4: {
+                        counter: 0
+                    }
+                }
+            }
+        }
+    }
+}
 const normalizedCount = 10;
 
 const iterations = 1000;
@@ -37,77 +50,33 @@ suite("immutable noop", function () {
 });
 suite("redux", function () {
     set('iterations', iterations);
+    const { counterReducer, modifyReducer, normalizedReducer, deepCounterReducer } = require("./reduxReducers");
+    const initStore = (reducer) => {
+        const store = createStore(reducer);
+        store.subscribe(() => { });
+        return store;
+    }
     bench("create", function () {
         const store = createStore((d = null) => d);
         store.subscribe(() => { });
         const action = { type: "any" };
     });
-    let storeModify = createStore((state = { ...initCounterStore }) => ({
-        ...state,
-        scope: {
-            ...state.scope,
-            counter: 1
-        }
-    }));
-    storeModify.subscribe(() => { });
-
+    let storeModify = initStore(modifyReducer(initCounterStore));
     bench("modify", function () {
         storeModify.dispatch({ type: "init" });
     });
-
-    function counterReducer(state = { ...initCounterStore }, action) {
-        switch (action.type) {
-            case 'INCREMENT':
-                return {
-                    ...state,
-                    scope: {
-                        ...state.scope,
-                        counter: state.scope.counter + 1
-                    }
-                };
-            case 'DECREMENT':
-                return {
-                    ...state,
-                    scope: {
-                        ...state.scope,
-                        counter: state.scope.counter - 1
-                    }
-                };
-            default:
-                return state;
-        }
-    }
-
-    const storeCounter = createStore(counterReducer);
-    storeCounter.subscribe(() => { });
-
+    const storeCounter = initStore(counterReducer(initCounterStore));
     bench("counter reducer", function () {
         storeCounter.dispatch({ type: 'INCREMENT' });
         storeCounter.dispatch({ type: 'DECREMENT' });
     });
-
-    function normalizedReducer(state = { ...initNormalizedState }, action) {
-        switch (action.type) {
-            case 'add':
-                return {
-                    ...state,
-                    news: { ...state.news, [action.payload.id]: action.payload },
-                    show: [...state.show, action.payload.id]
-                };
-            case 'delete':
-                const { [action.payload]: _, ...newNews } = state.news;
-                return {
-                    ...state,
-                    news: newNews,
-                    show: state.show.filter(id => id !== action.payload)
-                };
-            default:
-                return state;
-        }
-    }
-
-    const storeNormalized = createStore(normalizedReducer);
-    storeNormalized.subscribe(() => { });
+    const deepCounter = initStore(deepCounterReducer(deepState));
+    bench("counter reducer deep", function () {
+        storeCounter.dispatch({ type: 'INCREMENT' });
+        storeCounter.dispatch({ type: 'DECREMENT' });
+        storeCounter.getState();
+    });
+    const storeNormalized = initStore(normalizedReducer(initNormalizedState));
     bench("normalized state", function () {
         for (let i = 0; i < normalizedCount; i++) {
             storeNormalized.dispatch({ type: 'add', payload: { id: i, text: "some news text" + i } });
@@ -121,29 +90,34 @@ suite("redux", function () {
 suite("reistate", function () {
     set('iterations', iterations);
     const schema = new StoreSchema();
+    const initStore = (state) => {
+        const store = new Store(new StoreSchema(), { ...state });
+        store.updateHandler.subscribe(() => { });
+        return store;
+    }
     bench("create", function () {
         const store = new Store(schema);
         store.updateHandler.subscribe(() => { });
         Path.fromSelector(f => f.scope);
     });
     const path = Path.fromSelector(f => f.scope.counter);
-    const storeModify = new Store(new StoreSchema(), { ...initCounterStore });
-    storeModify.updateHandler.subscribe(() => { });
+    const storeModify = initStore(initCounterStore);
     bench("modify", function () {
         storeModify.instructor.set(path, 1);
     });
 
-    const storeCounter = new Store(new StoreSchema(), { ...initCounterStore });
-    storeCounter.updateHandler.subscribe(() => { });
-    // const deepPath = Path.fromSelector(f => f.scope.s.s.s.counter);
+    const storeCounter = initStore(initCounterStore);
     bench("counter reducer", function () {
         storeCounter.instructor.set(path, storeCounter.state.scope.counter + 1);
         storeCounter.instructor.set(path, storeCounter.state.scope.counter - 1);
     });
-    // bench("counter reducer deep", function () {
-    //     storeCounter.instructor.set(deepPath, 1);
-    //     storeCounter.instructor.set(deepPath, 1);
-    // });
+    const storeDeepCounter = initStore(deepState);
+    const deepPath = Path.fromSelector(f => f.scope0.scope1.scope2.scope3.scope4.counter);
+    bench("counter reducer deep", function () {
+        storeDeepCounter.instructor.set(deepPath, 1);
+        storeDeepCounter.instructor.set(deepPath, 1);
+        storeDeepCounter.state;
+    });
 
     const newsPath = Path.fromSelector(f => f.news);
     const showPath = Path.fromSelector(f => f.show);
@@ -180,36 +154,57 @@ const {
 
 suite("effector", function () {
     set('iterations', iterations);
+    const initStore = (state) => {
+        const store = ecS(state);
+        store.subscribe(() => { });
+        return store;
+    }
     bench("create", function () {
         const changeText = createEvent('change todo text');
         const store = ecS({})
             .on(changeText, (_, val) => val);
         store.subscribe(() => { });
     });
-    const changeText = createEvent('change todo text');
-    const store = ecS(0)
-        .on(changeText, (_, val) => val);
-    store.subscribe(() => { });
+    const simpleEvent = createEvent('change todo text');
+    const store = initStore(0)
+        .on(simpleEvent, (_, val) => val);
     bench("modify", function () {
-        changeText(1);
+        simpleEvent(1);
     });
 
     const increment = createEvent('increment');
     const decrement = createEvent('decrement');
-    const storeConter = ecS(0)
+    const storeConter = initStore(0)
         .on(increment, val => val++)
         .on(decrement, val => val--);
-    storeConter.subscribe(() => { });
     const scopedCounter = createStoreObject({ scope: storeConter });
 
     bench("counter reducer", function () {
         increment();
         decrement();
     });
+    const increment2 = createEvent('increment');
+    const decrement2 = createEvent('decrement');
+    const storeDeepConter = initStore(0)
+        .on(increment2, val => val++)
+        .on(decrement2, val => val--);
+    const scoped5Counter = createStoreObject({ counter: storeDeepConter });
+    const scoped4Counter = createStoreObject({ scope4: scoped5Counter });
+    const scoped3Counter = createStoreObject({ scope3: scoped4Counter });
+    const scoped2Counter = createStoreObject({ scope2: scoped3Counter });
+    const scoped1Counter = createStoreObject({ scope1: scoped2Counter });
+    const scoped0Counter = createStoreObject({ scope0: scoped1Counter });
+    store.subscribe(() => { });
+
+    bench("counter reducer deep", function () {
+        increment2();
+        decrement2();
+        scoped0Counter.getState();
+    });
 
     const addNews = createEvent('add');
     const removeNews = createEvent('remove');
-    const storeNormalized = ecS({ ...initNormalizedState })
+    const storeNormalized = initStore(initNormalizedState)
         .on(addNews, ({ news, show }, payload) => ({
             news: { ...news, [payload.id]: payload },
             show: [...show, payload.id]
@@ -221,7 +216,6 @@ suite("effector", function () {
                 show: show.filter(id => id !== payload)
             };
         });
-    storeNormalized.subscribe(() => { });
     bench("normalized state", function () {
         for (let i = 0; i < normalizedCount; i++) {
             addNews({ id: i, text: "some news text" + i });
@@ -238,11 +232,10 @@ suite("effector", function () {
             const { [payload]: _, ...newNews } = state;
             return newNews;
         });
-    const storeShow = ecS([])
+    const storeShow = initStore([])
         .on(addNews2, (state, news) => [...state, news.id])
         .on(removeNews2, (state, id) => state.filter(cid => cid !== id));
     const storeNormalized2 = createStoreObject({ news: storeNews, show: storeShow });
-    storeShow.subscribe(() => { });
     bench("normalized state two stores", function () {
         for (let i = 0; i < normalizedCount; i++) {
             addNews2({ id: i, text: "some news text" + i });
@@ -270,6 +263,38 @@ suite("pathon", function () {
         counterPath.set(counterPath.get() - 1);
     });
 
+    const deepExamplePath = path(
+        "deep-example",
+        { ...deepState },
+        immutablePreset
+    );
+    const increment = () => {
+        const counterPath = deepExamplePath
+            .path("scope0")
+            .path("scope1")
+            .path("scope2")
+            .path("scope3")
+            .path("scope4")
+            .path("counter");
+        counterPath.set(counterPath.get() + 1);
+    };
+    const decrement = () => {
+        const counterPath = deepExamplePath
+            .path("scope0")
+            .path("scope1")
+            .path("scope2")
+            .path("scope3")
+            .path("scope4")
+            .path("counter");
+        counterPath.set(counterPath.get() - 1);
+    };
+    deepExamplePath.watch(state => state);
+    bench("counter reducer deep", function () {
+        increment();
+        decrement();
+        deepExamplePath.get();
+    });
+
     const newsExamplePath = path(
         "news-example",
         { ...initNormalizedState },
@@ -277,11 +302,11 @@ suite("pathon", function () {
     );
     newsExamplePath.watch(state => state);
 
-    const addNews = ({ id, text }) => {
+    const addNews = (news) => {
         const state = newsExamplePath.get();
         newsExamplePath.set({
-            news: { ...state.news, [id]: text },
-            show: [...state.show, id]
+            news: { ...state.news, [news.id]: news },
+            show: [...state.show, news.id]
         });
     };
 
@@ -301,39 +326,6 @@ suite("pathon", function () {
             deleteNews(i);
         }
     });
-
-    const deepExampleInitialState = {
-        scope3: { scope2: { scope1: { scope0: { counter: 0 } } } }
-    };
-
-    const deepExamplePath = path(
-        "deep-example",
-        deepExampleInitialState,
-        immutablePreset
-    );
-    const increment = () => {
-        const counterPath = deepExamplePath
-            .path("scope3")
-            .path("scope2")
-            .path("scope1")
-            .path("scope0")
-            .path("counter");
-        counterPath.set(counterPath.get() + 1);
-    };
-    const decrement = () => {
-        const counterPath = deepExamplePath
-            .path("scope3")
-            .path("scope2")
-            .path("scope1")
-            .path("scope0")
-            .path("counter");
-        counterPath.set(counterPath.get() - 1);
-    };
-    deepExamplePath.watch(state => state);
-    bench("counter reducer deep", function () {
-        increment();
-        decrement();
-    });
 });
 suite("pathon mutable", function () {
     set('iterations', iterations);
@@ -351,6 +343,38 @@ suite("pathon mutable", function () {
         counterPath.set(counterPath.get() - 1);
     });
 
+    const deepExamplePath = path(
+        "deep-example",
+        { ...deepState },
+        mutablePreset
+    );
+    const increment = () => {
+        const counterPath = deepExamplePath
+            .path("scope0")
+            .path("scope1")
+            .path("scope2")
+            .path("scope3")
+            .path("scope4")
+            .path("counter");
+        counterPath.set(counterPath.get() + 1);
+    };
+    const decrement = () => {
+        const counterPath = deepExamplePath
+            .path("scope0")
+            .path("scope1")
+            .path("scope2")
+            .path("scope3")
+            .path("scope4")
+            .path("counter");
+        counterPath.set(counterPath.get() - 1);
+    };
+    deepExamplePath.watch(state => state);
+    bench("counter reducer deep", function () {
+        increment();
+        decrement();
+        deepExamplePath.get();
+    });
+
     const newsExamplePath = path(
         "news-example",
         { ...initNormalizedState },
@@ -360,20 +384,16 @@ suite("pathon mutable", function () {
 
     const addNews = ({ id, text }) => {
         const state = newsExamplePath.get();
-        // console.log(state);
-        newsExamplePath.set({
-            news: { ...state.news, [id]: text },
-            show: [...state.show, id]
-        });
+        state.news[id] = { id, text };
+        state.show.push(id);
+        newsExamplePath.set(state);
     };
 
     const deleteNews = (id) => {
         const state = newsExamplePath.get();
-        const { [id]: _, ...news } = state.news;
-        newsExamplePath.set({
-            news,
-            show: state.show.filter(element => element !== id)
-        });
+        delete state.news[id];
+        state.show = state.show.filter(element => element !== id);
+        newsExamplePath.set(state);
     };
     bench("normalized state", function () {
         for (let i = 0; i < 10; i++) {
@@ -382,38 +402,5 @@ suite("pathon mutable", function () {
         for (let i = 9; i >= 0; i--) {
             deleteNews(i);
         }
-    });
-
-    const deepExampleInitialState = {
-        scope3: { scope2: { scope1: { scope0: { counter: 0 } } } }
-    };
-
-    const deepExamplePath = path(
-        "deep-example",
-        deepExampleInitialState,
-        mutablePreset
-    );
-    const increment = () => {
-        const counterPath = deepExamplePath
-            .path("scope3")
-            .path("scope2")
-            .path("scope1")
-            .path("scope0")
-            .path("counter");
-        counterPath.set(counterPath.get() + 1);
-    };
-    const decrement = () => {
-        const counterPath = deepExamplePath
-            .path("scope3")
-            .path("scope2")
-            .path("scope1")
-            .path("scope0")
-            .path("counter");
-        counterPath.set(counterPath.get() - 1);
-    };
-    deepExamplePath.watch(state => state);
-    bench("counter reducer deep", function () {
-        increment();
-        decrement();
     });
 });

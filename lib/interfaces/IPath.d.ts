@@ -9,6 +9,7 @@ export interface IPath<TModel, TValue> {
     getSelector(): PathSelector<TModel, TValue>;
     getInstructions(): IPathInstruction[];
     setImmutable(object: TModel, value: TValue): any;
+    set(object: TModel, value: TValue): any;
     get(object: TModel, defaultValue?: TValue): TValue | undefined;
     join<T>(path: IPath<TValue, T>): IPath<TModel, T>;
     includes(path: IPath<TModel, any>, strict?: boolean): boolean;
