@@ -23,16 +23,20 @@ const reistateSuite = (iterations, initCounterStore, deepState, initNormalizedSt
 
         const storeCounter = initStore(initCounterStore);
         bench("counter reducer", function () {
+            storeCounter.beginTransaction();
             storeCounter.instructor.set(path, v => v + 1);
             storeCounter.instructor.set(path, v => v - 1);
+            storeCounter.flush();
         });
         const deepSchema = new StoreSchema();
         const storeDeepCounter = new Store(deepSchema, { ...deepState });
         storeDeepCounter.updateHandler.subscribe(() => { });
         const scopeSchema = createScope(deepSchema, Path.fromSelector(f => f.scope0.scope1.scope2.scope3.scope4.counter));
         bench("counter reducer deep", function () {
+            storeDeepCounter.beginTransaction();
             storeDeepCounter.instructor.set(scopeSchema.path, v => v + 1);
             storeDeepCounter.instructor.set(scopeSchema.path, v => v - 1);
+            storeDeepCounter.flush();
             storeDeepCounter.state.scope0.scope1.scope2.scope3.scope4.counter;
         });
 
@@ -40,7 +44,7 @@ const reistateSuite = (iterations, initCounterStore, deepState, initNormalizedSt
             if (is(newsScope.path)) {
                 if (instruction.type === InstructionType.add) {
                     yield Instructor.createAdd(showArgPath, instruction.value.id);
-                } else {
+                } else if (instruction.type === InstructionType.remove) {
                     yield Instructor.createRemove(showScope.path, [], instruction.index);
                 }
             }
@@ -55,12 +59,14 @@ const reistateSuite = (iterations, initCounterStore, deepState, initNormalizedSt
         const storeNormalized = new Store(schemaNormalized, { ...initNormalizedState });
         storeNormalized.updateHandler.subscribe(() => { });
         bench("normalized state", function () {
+            storeNormalized.beginTransaction();
             for (let i = 0; i < normalizedCount; i++) {
                 storeNormalized.instructor.add(newsArgPath, { id: i, text: "some news text" + i }, [i]);
             }
             for (let i = normalizedCount - 1; i >= 0; i--) {
                 storeNormalized.instructor.remove(newsScope.path, [], i);
             }
+            storeNormalized.flush();
         });
     });
 };

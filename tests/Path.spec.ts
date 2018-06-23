@@ -50,7 +50,7 @@ describe("Path", () => {
     it("setValueImmutable positive", () => {
         const obj = {};
         const setObj = {};
-        expect(path1.setImmutable(obj as any, setObj as any)).to.be.equal(true);
+        path1.setImmutable(obj as any, setObj as any);
         expect(obj).to.be.deep.equal({ a: { b: setObj } });
     });
 

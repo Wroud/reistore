@@ -70,8 +70,11 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
             [...this.instructions.map(i => ({ ...i, isEnd: false })), ...path.getInstructions()]
         );
     }
-    get(object: TModel, defaultValue?: TValue, args: PathArg[] = []): TValue | undefined {
+    get(object: TModel, defaultValue?: TValue, strict: boolean = false, args: PathArg[] = []): TValue | undefined {
         let link = object;
+        if (!strict) {
+            return this.selector(object);
+        }
         for (const instruction of this.instructions) {
             let key = instruction.key as string;
             if (instruction.isArg) {
@@ -114,20 +117,18 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
         }
         return false;
     }
-    setImmutable(object: TModel, value?: PathValue<TValue> | null, args?: PathArg[]) {
-        if (object === undefined) {
-            return false;
+    setImmutable(object: TModel, value: PathValue<TValue> | undefined | null, args: PathArg[]) {
+        if (this.instructions.length === 0) {
+            throw new Error("Cant set value to zero path");
         }
-        this.nextPath(0, object, value, args || []);
-        return true;
+        this.nextPath(0, this.instructions[0], object, value, args);
     }
-    private nextPath(index: number, object: TModel, value: PathValue<TValue> | undefined | null, args: PathArg[]) {
-        const instruction = this.instructions[index];
-        let key = instruction.key as string;
-        if (instruction.isArg) {
-            let arg = args[key];
+    private nextPath(index: number, { key: ikey, isArg, isEnd }: IPathInstruction, object: TModel, value: PathValue<TValue> | undefined | null, args: PathArg[]) {
+        let key = ikey as number | string;
+        if (isArg) {
+            const arg = args[key];
             if (arg === undefined) {
-                key = Array.isArray(object)
+                key = Array.isArray(object) && (key === args.length - 1)
                     ? (object as any).length
                     : undefined;
             } else if (typeof arg === "function") {
@@ -136,7 +137,7 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
                 key = arg;
             }
         }
-        if (instruction.isEnd) {
+        if (isEnd) {
             if (value === null) {
                 delete object[key];
             } else {
@@ -152,14 +153,14 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
         if (!nextInstruction.isMutable) {
             if (newObject === undefined) {
                 newObject = nextInstruction.isIndex ? [] : {};
-            } else if (isArray(newObject)) {
-                newObject = [...newObject];
             } else {
-                newObject = { ...newObject };
+                newObject = isArray(newObject)
+                    ? [...newObject]
+                    : { ...newObject };
             }
             object[key] = newObject;
         }
-        this.nextPath(index, newObject, value, args);
+        this.nextPath(index, nextInstruction, newObject, value, args);
     }
 }
 

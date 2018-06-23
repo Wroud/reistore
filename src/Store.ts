@@ -30,6 +30,15 @@ export class Store<TState> implements IStoreInstructor<TState> {
     get state() {
         return this.stateStore;
     }
+    beginTransaction() {
+        this.instructor.beginTransaction();
+    }
+    flush() {
+        this.instructor.flush();
+    }
+    undoTransaction() {
+        this.instructor.undoTransaction();
+    }
     set<TValue>(path: IPath<TState, TValue>, value: TValue, pathArgs?: PathArg[], index?: string | number | IndexGetter<TValue>) {
         this.instructor.set(path, value, pathArgs, index);
     }
