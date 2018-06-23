@@ -1,5 +1,5 @@
 import { isArray, isNumber } from "util";
-import { IPath, PathSelector, IPathInstruction } from "./interfaces/IPath";
+import { IPath, PathSelector, IPathInstruction, PathArg, PathValue } from "./interfaces/IPath";
 
 export class Path<TModel, TValue> implements IPath<TModel, TValue> {
     static fromSelector<TModel, TValue>(selector: PathSelector<TModel, TValue>) {
@@ -11,7 +11,7 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
         const instructions: IPathInstruction[] = [];
         for (const unit of parts) {
             const isIndex = !isNaN(unit.toString() as any);
-            instructions.push({ isIndex, key: unit.toString() });
+            instructions.push({ isIndex, key: unit.toString(), isMutable: false });
         }
         if (instructions.length > 0) {
             instructions[instructions.length - 1].isEnd = true;
@@ -28,6 +28,9 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
         this.selector = selector;
         this.instructions = instructions;
         this.path = path;
+    }
+    toMutable() {
+        return new Path(this.selector, this.path, this.instructions.map(i => ({ ...i, isMutable: true })))
     }
     getPath() {
         return this.path;
@@ -67,68 +70,102 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
             [...this.instructions.map(i => ({ ...i, isEnd: false })), ...path.getInstructions()]
         );
     }
-    get(object: TModel, defaultValue?: TValue): TValue | undefined {
+    get(object: TModel, defaultValue?: TValue, args: PathArg[] = []): TValue | undefined {
         let link = object;
         for (const instruction of this.instructions) {
+            let key = instruction.key as string;
+            if (instruction.isArg) {
+                let arg = args[key];
+                key = typeof arg === "function"
+                    ? arg(link)
+                    : arg;
+            }
             if (instruction.isEnd) {
-                const result = link[instruction.key];
+                const result = link[key];
                 return result === undefined ? defaultValue : result;
             }
-            link = link[instruction.key];
+            link = link[key];
             if (link === undefined) {
                 return defaultValue as any;
             }
         }
         return object as any;
     }
-    set(object: TModel, value?: TValue | null) {
+    set(object: TModel, value?: PathValue<TValue> | null, args: PathArg[] = []) {
         let link = object;
         for (const instruction of this.instructions) {
+            let key = instruction.key as string;
+            if (instruction.isArg) {
+                let arg = args[key];
+                key = typeof arg === "function"
+                    ? arg(link)
+                    : arg;
+            }
             if (instruction.isEnd) {
-                link[instruction.key] = value;
+                link[key] = typeof value === "function"
+                    ? value(link[key])
+                    : value;
                 return true;
             }
-            link = link[instruction.key];
+            link = link[key];
             if (link === undefined) {
                 return false;
             }
         }
         return false;
     }
-    setImmutable(object: TModel, value?: TValue | null) {
+    setImmutable(object: TModel, value?: PathValue<TValue> | null, args?: PathArg[]) {
         if (object === undefined) {
             return false;
         }
-        this.nextPath(0, object, value);
+        this.nextPath(0, object, value, args || []);
         return true;
     }
-    private nextPath(index: number, object: TModel, value?: TValue | null) {
+    private nextPath(index: number, object: TModel, value: PathValue<TValue> | undefined | null, args: PathArg[]) {
         const instruction = this.instructions[index];
+        let key = instruction.key as string;
+        if (instruction.isArg) {
+            let arg = args[key];
+            if (arg === undefined) {
+                key = Array.isArray(object)
+                    ? (object as any).length
+                    : undefined;
+            } else if (typeof arg === "function") {
+                key = arg(object);
+            } else {
+                key = arg;
+            }
+        }
         if (instruction.isEnd) {
             if (value === null) {
-                delete object[instruction.key];
+                delete object[key];
             } else {
-                object[instruction.key] = value;
+                object[key] = typeof value === "function"
+                    ? value(object[key])
+                    : value;
             }
             return;
         }
 
         const nextInstruction = this.instructions[++index];
-        let newObject = object[instruction.key];
-        if (newObject === undefined) {
-            newObject = nextInstruction.isIndex ? [] : {};
-        } else if (isArray(newObject)) {
-            newObject = [...newObject];
-        } else {
-            newObject = { ...newObject };
+        let newObject = object[key];
+        if (!nextInstruction.isMutable) {
+            if (newObject === undefined) {
+                newObject = nextInstruction.isIndex ? [] : {};
+            } else if (isArray(newObject)) {
+                newObject = [...newObject];
+            } else {
+                newObject = { ...newObject };
+            }
+            object[key] = newObject;
         }
-        object[instruction.key] = newObject;
-        this.nextPath(index, newObject, value);
+        this.nextPath(index, newObject, value, args);
     }
 }
 
 export function getPathInstructions(selector: (obj) => any, data) {
     let path = "";
+    let argIndex = 0;
     const instructions: IPathInstruction[] = [];
     const proxyFactory = object => new Proxy(object, {
         get(target, prop) {
@@ -137,7 +174,11 @@ export function getPathInstructions(selector: (obj) => any, data) {
             }
             const propAsString = isNumber(prop) ? prop : prop.toString();
             const isIndex = !isNaN(propAsString as any);
-            instructions.push({ isIndex, key: propAsString });
+            if (propAsString === "{}") {
+                instructions.push({ isIndex, key: argIndex++, isMutable: false, isArg: true });
+            } else {
+                instructions.push({ isIndex, key: propAsString, isMutable: false });
+            }
             path += isIndex
                 ? `[${propAsString}]`
                 : path === ""

@@ -1,8 +1,13 @@
 export type PathSelector<TModel, TValue> = (model: TModel) => TValue;
 
+export type PathArg = string | number | ((value: any) => string | number);
+export type PathValue<T> = T | ((value: T) => T)
+
 export interface IPathInstruction {
-    key: string | number;
+    key: PathArg;
+    isArg?: boolean;
     isIndex: boolean;
+    isMutable: boolean;
     isEnd?: boolean;
 }
 
@@ -10,9 +15,10 @@ export interface IPath<TModel, TValue> {
     getPath(): string;
     getSelector(): PathSelector<TModel, TValue>;
     getInstructions(): IPathInstruction[];
-    setImmutable(object: TModel, value: TValue);
-    set(object: TModel, value: TValue);
-    get(object: TModel, defaultValue?: TValue): TValue | undefined;
+    toMutable(): IPath<TModel, TValue>;
+    setImmutable(object: TModel, value: PathValue<TValue>, args?: PathArg[]);
+    set(object: TModel, value: PathValue<TValue>, args?: PathArg[]);
+    get(object: TModel, defaultValue?: TValue, args?: PathArg[]): TValue | undefined;
     join<T>(path: IPath<TValue, T>): IPath<TModel, T>;
     includes(path: IPath<TModel, any>, strict?: boolean): boolean;
 }

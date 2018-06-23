@@ -9,7 +9,7 @@ export class Scope<TState, TModel, TScope> extends StoreSchema<TState, TScope> i
         super(transformator);
         this.parent = parent;
         this.store = isScope<TState, any, TModel>(parent) ? parent.store : (parent as any);
-        this.path = path;
+        this.path = path.toMutable();
         this.parent.addScope(this);
     }
     getState(state: TState) {

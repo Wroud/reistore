@@ -23,7 +23,7 @@ const reduxSuite = (iterations, initCounterStore, deepState, initNormalizedState
             storeCounter.dispatch({ type: 'INCREMENT' });
             storeCounter.dispatch({ type: 'DECREMENT' });
         });
-        const deepCounter = initStore(deepCounterReducer(deepState));
+        const deepCounter = initStore(deepCounterReducer);
         bench("counter reducer deep", function () {
             storeCounter.dispatch({ type: 'INCREMENT' });
             storeCounter.dispatch({ type: 'DECREMENT' });

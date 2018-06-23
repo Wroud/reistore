@@ -1,4 +1,4 @@
-const { Store, StoreSchema, Scope, Path, Instructor } = require("../lib");
+const { Store, StoreSchema, createScope, Path, Instructor } = require("../lib");
 const { InstructionType } = require("../lib/enums/InstructionType");
 
 const reistateSuite = (iterations, initCounterStore, deepState, initNormalizedState, normalizedCount) => {
@@ -23,39 +23,43 @@ const reistateSuite = (iterations, initCounterStore, deepState, initNormalizedSt
 
         const storeCounter = initStore(initCounterStore);
         bench("counter reducer", function () {
-            storeCounter.instructor.set(path, storeCounter.state.scope.counter + 1);
-            storeCounter.instructor.set(path, storeCounter.state.scope.counter - 1);
+            storeCounter.instructor.set(path, v => v + 1);
+            storeCounter.instructor.set(path, v => v - 1);
         });
-        const storeDeepCounter = initStore(deepState);
-        const deepPath = Path.fromSelector(f => f.scope0.scope1.scope2.scope3.scope4.counter);
+        const deepSchema = new StoreSchema();
+        const storeDeepCounter = new Store(deepSchema, { ...deepState });
+        storeDeepCounter.updateHandler.subscribe(() => { });
+        const scopeSchema = createScope(deepSchema, Path.fromSelector(f => f.scope0.scope1.scope2.scope3.scope4.counter));
         bench("counter reducer deep", function () {
-            storeDeepCounter.instructor.set(deepPath, 1);
-            storeDeepCounter.instructor.set(deepPath, 1);
-            storeDeepCounter.state;
+            storeDeepCounter.instructor.set(scopeSchema.path, v => v + 1);
+            storeDeepCounter.instructor.set(scopeSchema.path, v => v - 1);
+            storeDeepCounter.state.scope0.scope1.scope2.scope3.scope4.counter;
         });
 
-        const newsPath = Path.fromSelector(f => f.news);
-        const showPath = Path.fromSelector(f => f.show);
         function* transformer(instruction, is, state) {
-            if (is(newsPath)) {
+            if (is(newsScope.path)) {
                 if (instruction.type === InstructionType.add) {
-                    yield Instructor.createAdd(showPath, instruction.value.id);
+                    yield Instructor.createAdd(showArgPath, instruction.value.id);
                 } else {
-                    yield Instructor.createRemove(showPath, instruction.index);
+                    yield Instructor.createRemove(showScope.path, [], instruction.index);
                 }
             }
             yield instruction;
         }
         const schemaNormalized = new StoreSchema(transformer);
+        const newsScope = createScope(schemaNormalized, Path.fromSelector(f => f.news));
+        const showScope = createScope(schemaNormalized, Path.fromSelector(f => f.show));
+        const newsArgPath = newsScope.path.join(Path.fromSelector(f => f["{}"]));
+        const showArgPath = showScope.path.join(Path.fromSelector(f => f["{}"]));
 
         const storeNormalized = new Store(schemaNormalized, { ...initNormalizedState });
         storeNormalized.updateHandler.subscribe(() => { });
         bench("normalized state", function () {
             for (let i = 0; i < normalizedCount; i++) {
-                storeNormalized.instructor.add(newsPath, { id: i, text: "some news text" + i }, i);
+                storeNormalized.instructor.add(newsArgPath, { id: i, text: "some news text" + i }, [i]);
             }
             for (let i = normalizedCount - 1; i >= 0; i--) {
-                storeNormalized.instructor.remove(newsPath, i);
+                storeNormalized.instructor.remove(newsScope.path, [], i);
             }
         });
     });

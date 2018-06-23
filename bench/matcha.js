@@ -25,7 +25,7 @@ const deepState = {
         }
     }
 }
-const normalizedCount = 10;
+const normalizedCount = 5;
 
 const iterations = 1000;
 suite("immutable noop", function () {
@@ -50,5 +50,5 @@ suite("immutable noop", function () {
 });
 reduxSuite(iterations, initCounterStore, deepState, initNormalizedState, normalizedCount);
 reistateSuite(iterations, initCounterStore, deepState, initNormalizedState, normalizedCount);
-efSuite(iterations, initCounterStore, deepState, initNormalizedState, normalizedCount);
-pathonSuite(iterations, initCounterStore, deepState, initNormalizedState, normalizedCount);
+// efSuite(iterations, initCounterStore, deepState, initNormalizedState, normalizedCount);
+// pathonSuite(iterations, initCounterStore, deepState, initNormalizedState, normalizedCount);

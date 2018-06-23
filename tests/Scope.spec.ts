@@ -55,12 +55,12 @@ describe("Scope", () => {
                 ]
             }
         }
-        store.instructor.add(Path.fromSelector(f => f.scope.array), {
+        store.instructor.add(Path.fromSelector(f => f.scope.array[0]), {
             number: 6
         });
-        store.instructor.add(Path.fromSelector(f => f.scope.array), {
+        store.instructor.add(Path.fromSelector(f => f.scope.array[2]), {
             number: 6
-        }, 2);
+        });
         expect(store.state.scope.array[0].number).to.be.equal(6);
         expect(store.state.scope.array[2].number).to.be.equal(6);
         expect(store.state.scope).to.be.deep.equal(expectedState.scope);
@@ -80,12 +80,12 @@ describe("Scope", () => {
         const expectState = { scope: { array: [] } };
         const schema = new Scope(new StoreSchema<IModel, IModel>(), Path.fromSelector(f => f.scope));
         const store = new Store(schema.store, init as IModel);
-        store.instructor.add(Path.fromSelector(f => f.scope.array), {
+        store.instructor.add(Path.fromSelector(f => f.scope.array[2]), {
             number: 6
-        }, 2);
-        store.instructor.remove(Path.fromSelector(f => f.scope.array), 0);
+        });
+        store.instructor.remove(Path.fromSelector(f => f.scope.array), [], 0);
         expect(store.state.scope.array.length).to.be.equal(1);
-        store.instructor.remove(Path.fromSelector(f => f.scope.array), 0);
+        store.instructor.remove(Path.fromSelector(f => f.scope.array), [], 0);
         expect(store.state.scope.array.length).to.be.equal(0);
         expect(store.state.scope).to.be.deep.equal(expectState.scope);
         expect(store.state).to.be.deep.equal(expectState);

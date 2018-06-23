@@ -1,5 +1,6 @@
 import { IInstruction, IPath, IStoreSchema, Transformator, IScope } from "./interfaces";
 import { exchangeIterator } from "./tools";
+import { PathArg } from "interfaces/IPath";
 
 export class StoreSchema<TState, T> implements IStoreSchema<TState, T> {
     transformator!: Transformator<TState, T>;
@@ -41,8 +42,20 @@ export class StoreSchema<TState, T> implements IStoreSchema<TState, T> {
             this.scopes.splice(id, 1);
         }
     }
-    protected isInstruction = (instruction: IInstruction<TState, any>) => (path: IPath<TState, any>, strict?: boolean) => {
-        return instruction.path.includes(path, strict);
+    protected isInstruction = (instruction: IInstruction<TState, any>) => (path: IPath<TState, any>, args?: PathArg[], strict?: boolean) => {
+        if (args !== undefined && args.length > instruction.args.length) {
+            return false;
+        }
+        const isPathEqual = instruction.path.includes(path, strict);
+        if (!isPathEqual || args === undefined || args.length === 0) {
+            return isPathEqual;
+        }
+        for (let i = 0; i < args.length; i++) {
+            if (args[i] !== instruction.args[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 }
 
