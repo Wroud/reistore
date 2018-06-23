@@ -1,6 +1,13 @@
 # reistore - Relational Immutable State Manager
 Make state managers greate again!
 
+1. Faster initialization compare to redux
+2. Native SSR support
+3. Transactions
+4. You need "Reducer" only when need to describe store relationships
+5. Comparable speed with redux
+6. Supports module architecture
+
 [![Travis](https://img.shields.io/travis/Wroud/reistore.svg)](https://travis-ci.org/Wroud/reistore)
 [![codecov](https://codecov.io/gh/Wroud/reistore/branch/master/graph/badge.svg)](https://codecov.io/gh/Wroud/reistore)
 [![GitHub issues](https://img.shields.io/github/issues/Wroud/reistore.svg)](https://github.com/Wroud/reistore/issues)
