@@ -1,6 +1,7 @@
 import { IInstruction, IPath, IStoreSchema, Transformator, IScope } from "./interfaces";
-import { exchangeIterator } from "./tools";
+import { exchangeIterator, isStore } from "./tools";
 import { PathArg } from "interfaces/IPath";
+import { IStore } from "./interfaces/IStore";
 
 export class StoreSchema<TState, T> implements IStoreSchema<TState, T> {
     transformator!: Transformator<TState, T>;
@@ -9,8 +10,8 @@ export class StoreSchema<TState, T> implements IStoreSchema<TState, T> {
         this.transformator = transformator as any;
         this.scopes = [];
     }
-    getState(state: TState) {
-        return state as any;
+    getState(state: TState | IStore<TState>) {
+        return isStore(state) ? state.state : state as any;
     }
     transform(state: TState, instructions: IterableIterator<IInstruction<TState, any>>) {
         if (this.transformator === undefined) {

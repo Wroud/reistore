@@ -31,13 +31,13 @@ const reistateSuite = (iterations, initCounterStore, deepState, initNormalizedSt
         const deepSchema = new StoreSchema();
         const storeDeepCounter = new Store(deepSchema, { ...deepState });
         storeDeepCounter.updateHandler.subscribe(() => { });
-        const scopeSchema = createScope(deepSchema, Path.fromSelector(f => f.scope0.scope1.scope2.scope3.scope4.counter));
+        const scopeSchema = createScope(deepSchema, Path.fromSelector(f => f.scope0.scope1.scope2.scope3.scope4));
+        const counterPath = scopeSchema.path.join(Path.fromSelector(f => f.counter));
         bench("counter reducer deep", function () {
             storeDeepCounter.beginTransaction();
-            storeDeepCounter.instructor.set(scopeSchema.path, v => v + 1);
-            storeDeepCounter.instructor.set(scopeSchema.path, v => v - 1);
+            storeDeepCounter.instructor.set(counterPath, v => v + 1);
+            storeDeepCounter.instructor.set(counterPath, v => v - 1);
             storeDeepCounter.flush();
-            storeDeepCounter.state.scope0.scope1.scope2.scope3.scope4.counter;
         });
 
         function* transformer(instruction, is, state) {

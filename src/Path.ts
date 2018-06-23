@@ -58,7 +58,10 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
             ? this.path === str
             : this.path.startsWith(str);
     }
-    join<T>(path: IPath<TValue, T>) {
+    join<T>(spath: IPath<TValue, T> | PathSelector<TValue, T>) {
+        const path = isPath<TValue, T>(spath)
+            ? spath
+            : Path.fromSelector(spath);
         const newPath = this.path.length > 0
             ? path.getPath().length > 0
                 ? this.path + (path.getPath()[0] === "[" ? "" : ".") + path.getPath()
@@ -204,6 +207,6 @@ export function getPathInstructions(selector: (obj) => any, data) {
     return { path, instructions };
 }
 
-export function isPath<TModel, TValue>(object): object is Path<TModel, TValue> {
-    return "fromSelector" in object;
+export function isPath<TModel, TValue>(object): object is Path<TModel, TValue> | IPath<TModel, TValue> {
+    return "fromSelector" in object || "instructions" in object;
 }
