@@ -10,6 +10,9 @@ export declare class Store<TState> implements IStoreInstructor<TState> {
     private stateStore;
     constructor(schema?: IStoreSchema<TState, TState>, initState?: TState);
     readonly state: TState;
+    beginTransaction(): void;
+    flush(): void;
+    undoTransaction(): void;
     set<TValue>(path: IPath<TState, TValue>, value: TValue, pathArgs?: PathArg[], index?: string | number | IndexGetter<TValue>): void;
     add<TValue>(path: IPath<TState, ValueMap<TValue> | TValue | TValue[]>, value: TValue, pathArgs?: PathArg[], index?: string | number | IndexGetter<TValue>): void;
     remove<TValue>(path: IPath<TState, ValueMap<TValue> | TValue[]>, pathArgs: PathArg[], index: string | number | IndexSearch<TValue>): void;

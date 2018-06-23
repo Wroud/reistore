@@ -34,6 +34,43 @@ store.set(counter, 1);
 const value = store.state.counter;
 // value = 1
 ```
+### Transaction API
+You also can use transaction api for executing series of commands, transaction can be undone.
+Transaction always faster when you need execute more then one command.
+```js
+import { 
+    createStore,
+    Path
+} from "reistore";
+
+const initState = {
+    counter: 0
+};
+const store = createStore(undefined, initState);
+const counter = Path.fromSelector(f => f.counter);
+
+store.beginTransaction();
+store.set(counter, 1);
+store.set(counter, 2);
+
+const value = store.state.counter;
+// value = 0
+
+store.set(counter, 3);
+store.flush();
+
+const value = store.state.counter;
+// value = 3
+
+store.beginTransaction();
+store.set(counter, 1);
+store.set(counter, 2);
+store.set(counter, 3);
+store.undoTransaction();
+
+const value = store.state.counter;
+// value = 3
+```
 ### Min-Max transform
 ```js
 import { 
@@ -114,3 +151,4 @@ const state = scope.state;
 const storeState = store.state;
 // { scope: { min: 1, max: 1 } }
 ```
+

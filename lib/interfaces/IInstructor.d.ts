@@ -7,6 +7,9 @@ export declare type ValueMap<TValue> = {
     [key: number]: TValue;
 };
 export interface IInstructor<TState> {
+    beginTransaction(): any;
+    flush(): any;
+    undoTransaction(): any;
     set<TValue>(path: IPath<TState, TValue>, value: TValue, pathArgs?: PathArg[], index?: string | number | IndexGetter<TValue>): any;
     add<TValue>(path: IPath<TState, ValueMap<TValue> | TValue | TValue[]>, value: TValue, pathArgs?: PathArg[], index?: string | number | IndexGetter<TValue>): any;
     remove<TValue>(path: IPath<TState, ValueMap<TValue> | TValue[]>, pathArgs: PathArg[] | undefined, index: string | number | IndexSearch<TValue>): any;
