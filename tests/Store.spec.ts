@@ -113,4 +113,20 @@ describe("Store", () => {
         expect(store.state).to.be.deep.equal(expectedState);
     });
 
+    it("array tests", () => {
+        const store = new Store<IModel>(undefined, { scope: { array: [] } } as any);
+        const expectedState = {
+            scope: {
+                array: [1, 2, 3]
+            }
+        }
+        store.instructor.add(Path.fromSelector(f => f.scope.array["{}"]), 1 as any);
+        store.instructor.add(Path.fromSelector(f => f.scope.array["{}"]), 2 as any);
+        store.instructor.add(Path.fromSelector(f => f.scope.array["{}"]), 3 as any);
+        expect(store.state.scope.array[0]).to.be.equal(1);
+        expect(store.state.scope.array[1]).to.be.equal(2);
+        expect(store.state.scope.array[2]).to.be.equal(3);
+        expect(store.state).to.be.deep.equal(expectedState);
+    });
+
 });

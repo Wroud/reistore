@@ -57,7 +57,7 @@ export class Store<TState> implements IStoreInstructor<TState> {
                     path.setImmutable(this.stateStore, value, args);
                     break;
                 case InstructionType.add:
-                    path.setImmutable(this.stateStore, value, index !== undefined ? [args, index as any] : args);
+                    path.setImmutable(this.stateStore, value, index !== undefined ? [...args, index as any] : args);
                     break;
                 case InstructionType.remove:
                     if (index === undefined) {

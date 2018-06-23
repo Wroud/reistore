@@ -50,7 +50,7 @@ export class Instructor<TState> implements IInstructor<TState> {
     static createAdd<TState, TValue>(path: IPath<TState, ValueMap<TValue> | TValue | TValue[]>, value: TValue, pathArgs: PathArg[] = [], index?: string | number | IndexGetter<TValue>) {
         return { path, args: pathArgs, index, value, type: InstructionType.add };
     }
-    static createRemove<TState, TValue>(path: IPath<TState, ValueMap<TValue> | TValue[]>, pathArgs: PathArg[], index: string | number | IndexSearch<TValue>) {
+    static createRemove<TState, TValue>(path: IPath<TState, ValueMap<TValue> | TValue[]>, pathArgs: PathArg[] = [], index: string | number | IndexSearch<TValue>) {
         return { path, args: pathArgs, index, type: InstructionType.remove };
     }
 }

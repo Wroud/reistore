@@ -131,7 +131,7 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
         if (isArg) {
             const arg = args[key];
             if (arg === undefined) {
-                key = Array.isArray(object) && (key === args.length - 1)
+                key = Array.isArray(object) && (args.length === 0 || key === args.length - 1)
                     ? (object as any).length
                     : undefined;
             } else if (typeof arg === "function") {
