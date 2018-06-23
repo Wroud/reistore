@@ -109,7 +109,7 @@ const state = store.state;
 
 store.set(path.min, -15);
 const state = store.state;
-// { min: -15, max: -10 }
+// { min: -15, max: -9 }
 ```
 
 ### Scope
