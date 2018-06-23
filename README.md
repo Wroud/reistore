@@ -22,6 +22,7 @@ npm i reistore
 
 ## Examples
 * [Todo](https://codesandbox.io/s/github/Wroud/reistore-react/tree/master/examples/ts)
+* [SSR](https://codesandbox.io/s/github/Wroud/reistore-react/tree/master/examples/ssr)
 
 ## Usage
 ### Simple
