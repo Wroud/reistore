@@ -13,7 +13,7 @@ export declare class Path<TModel, TValue> implements IPath<TModel, TValue> {
     getInstructions(): IPathInstruction[];
     includes(path: IPath<TModel, any>, strict?: boolean): boolean;
     includes2(path: (model: TModel) => any, strict?: boolean): boolean;
-    join<T>(path: IPath<TValue, T>): Path<TModel, T>;
+    join<T>(spath: IPath<TValue, T> | PathSelector<TValue, T>): any;
     get(object: TModel, defaultValue?: TValue, strict?: boolean, args?: PathArg[]): TValue | undefined;
     set(object: TModel, value?: PathValue<TValue> | null, args?: PathArg[]): boolean;
     setImmutable(object: TModel, value: PathValue<TValue> | undefined | null, args: PathArg[]): void;
@@ -23,4 +23,4 @@ export declare function getPathInstructions(selector: (obj: any) => any, data: a
     path: string;
     instructions: IPathInstruction[];
 };
-export declare function isPath<TModel, TValue>(object: any): object is Path<TModel, TValue>;
+export declare function isPath<TModel, TValue>(object: any): object is Path<TModel, TValue> | IPath<TModel, TValue>;
