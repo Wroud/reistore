@@ -32,7 +32,7 @@ export declare class Instructor<TState> implements IInstructor<TState> {
         value: TValue;
         type: InstructionType;
     };
-    static createRemove<TState, TValue>(path: IPath<TState, ValueMap<TValue> | TValue[]>, pathArgs: PathArg[], index: string | number | IndexSearch<TValue>): {
+    static createRemove<TState, TValue>(path: IPath<TState, ValueMap<TValue> | TValue[]>, pathArgs: PathArg[] | undefined, index: string | number | IndexSearch<TValue>): {
         path: IPath<TState, {
             [key: string]: TValue;
         } | {
