@@ -27,7 +27,6 @@ describe("Transform", () => {
             yield instruction;
         }
         const schema = createSchema<IModel>({} as IModel, transformer);
-        const store = createStore<IModel>(schema);
         const scopeValue = Path.fromSelector<IModel, number>(f => f.scope.value);
         const stateValue = Path.fromSelector<IModel, string>(f => f.value);
         function* scopeTransformer(instruction, is, state) {
@@ -37,6 +36,7 @@ describe("Transform", () => {
             yield instruction;
         }
         const scope = createScope(schema, f => f.scope, {}, scopeTransformer);
+        const store = createStore<IModel>(schema);
         const expectedState = {
             value: "0",
             scope: {

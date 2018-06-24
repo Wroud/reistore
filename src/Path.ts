@@ -77,7 +77,8 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
         let link = object;
         try {
             if (!strict) {
-                return this.tryReinitializeValue(object, args, this.selector(object), defaultValue);
+                const result = this.selector(object);
+                return result === undefined ? defaultValue : result;
             }
         } catch {
             console.group("Reistate:Path");
@@ -98,6 +99,10 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
             }
             link = link[key];
             if (link === undefined) {
+                console.group("Reistate:Path");
+                console.warn("Trying to get value from undefined, is default value not properly initialized?");
+                console.warn("Path: ", this.path);
+                console.groupEnd();
                 return defaultValue;
             }
         }
