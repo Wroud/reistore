@@ -46,13 +46,13 @@ const value = store.state.counter;
 You also can use transaction api for executing series of commands, transaction can be undone.
 Transaction always faster when you need execute more then one command.
 ```js
-import { 
-    createStore,
-    Path
+import {
+  createStore,
+  Path
 } from "reistore";
 
 const initState = {
-    counter: 0
+  counter: 0
 };
 const store = createStore(undefined, initState);
 const counter = Path.fromSelector(f => f.counter);
@@ -61,13 +61,13 @@ store.beginTransaction();
 store.set(counter, 1);
 store.set(counter, 2);
 
-const value = store.state.counter;
+console.log(store.state.counter);
 // value = 0
 
 store.set(counter, 3);
 store.flush();
 
-const value = store.state.counter;
+console.log(store.state.counter);
 // value = 3
 
 store.beginTransaction();
@@ -76,89 +76,89 @@ store.set(counter, 2);
 store.set(counter, 3);
 store.undoTransaction();
 
-const value = store.state.counter;
+console.log(store.state.counter);
 // value = 3
 ```
 ### Min-Max transform
 ```js
-import { 
-    createStore,
-    createSchema,
-    Path,
-    Instructor
+import {
+  createStore,
+  createSchema,
+  Path,
+  Instructor
 } from "reistore";
 
 const initState = {
-    min: 0,
-    max: 0
+  min: 0,
+  max: 0
 };
 const path = {
-    min: Path.fromSelector(f => f.min),
-    max: Path.fromSelector(f => f.max)
+  min: Path.fromSelector(f => f.min),
+  max: Path.fromSelector(f => f.max)
 }
 function* transformer(instruction, is, state) {
-    if(is(path.min) && instruction.value > state.max) {
-        yield Instructor.createSet(path.max, instruction.value);
-    } else if(is(path.max) && instruction.value < state.min) {
-        yield Instructor.createSet(path.min, instruction.value);
-    }
-    yield instruction;
+  yield instruction;
+  if (is(path.min) && state.min > state.max) {
+    yield Instructor.createSet(path.max, instruction.value);
+  } else if (is(path.max) && state.max < state.min) {
+    yield Instructor.createSet(path.min, instruction.value);
+  }
 }
-const store = createStore(schema, initState, transformer);
+const store = createStore(undefined, initState, transformer);
 
 store.set(path.min, 1);
-const state = store.state;
+console.log(store.state);
 // { min: 1, max: 1 }
 
 store.set(path.max, v => v - 10);
-const state = store.state;
+console.log(store.state);
 // { min: -9, max: -9 }
 
 store.set(path.min, -15);
-const state = store.state;
 // { min: -15, max: -9 }
+console.log(store.state);
 ```
 
 ### Scope
 ```js
-import { 
-    createStore,
-    createSchema,
-    createScope,
-    Path,
-    Instructor
+import {
+  createStore,
+  createSchema,
+  createScope,
+  Path,
+  Instructor
 } from "reistore";
 
-const initState = { 
-    sum: 0
+const initState = {
+  sum: 0
 };
 const scopeInitState = {
-    min: 0,
-    max: 0
+  min: 0,
+  max: 0
 }
 const schema = createSchema(initState);
-const store = createStore(schema);
 
 function* transformer(instruction, is, state, storeState) {
-    if(is(path.min) && instruction.value > state.max) {
-        yield Instructor.createSet(path.max, instruction.value);
-    } else if(is(path.max) && instruction.value < state.min) {
-        yield Instructor.createSet(path.min, instruction.value);
-    }
-    yield instruction;
-    yield Instructor.createSet(path.sum, storeState.max + storeState.min);
+  if (is(path.min) && instruction.value > state.max) {
+    yield Instructor.createSet(path.max, instruction.value);
+  } else if (is(path.max) && instruction.value < state.min) {
+    yield Instructor.createSet(path.min, instruction.value);
+  }
+  yield instruction;
+  yield Instructor.createSet(path.sum, storeState.scope.max + storeState.scope.min);
 }
 const scope = createScope(schema, f => f.scope, scopeInitState, transformer);
 const path = {
-    sum: Path.fromSelector(f => f.sum),
-    min: scope.path.join(f => f.min),
-    max: scope.path.join(f => f.max)
+  sum: Path.fromSelector(f => f.sum),
+  min: scope.path.join(f => f.min),
+  max: scope.path.join(f => f.max)
 }
+const store = createStore(schema);
 
 store.set(path.min, 1);
-const state = scope.getState(store);
+console.log(scope.getState(store));
 // { min: 1, max: 1 }
-const storeState = store.state;
+console.log(store.state);
 // { sum: 2, scope: { min: 1, max: 1 } }
 ```
 
