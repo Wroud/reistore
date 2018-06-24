@@ -1,4 +1,4 @@
-import { IPath, PathArg } from "./IPath";
+import { IPath, PathArg, PathValue } from "./IPath";
 export declare type IndexSearch<TValue> = (value: TValue, index: string | number) => boolean;
 export declare type IndexGetter<TValue> = (value: TValue[]) => string | number;
 export declare type ValueMap<TValue> = {
@@ -10,7 +10,7 @@ export interface IInstructor<TState> {
     beginTransaction(): any;
     flush(): any;
     undoTransaction(): any;
-    set<TValue>(path: IPath<TState, TValue>, value: TValue, pathArgs?: PathArg[], index?: string | number | IndexGetter<TValue>): any;
-    add<TValue>(path: IPath<TState, ValueMap<TValue> | TValue | TValue[]>, value: TValue, pathArgs?: PathArg[], index?: string | number | IndexGetter<TValue>): any;
-    remove<TValue>(path: IPath<TState, ValueMap<TValue> | TValue[]>, pathArgs: PathArg[] | undefined, index: string | number | IndexSearch<TValue>): any;
+    set<TValue>(path: IPath<TState, TValue>, value: PathValue<TValue>, pathArgs?: PathArg[]): any;
+    add<TValue>(path: IPath<TState, ValueMap<TValue> | TValue | TValue[]>, value: PathValue<TValue>, pathArgs?: PathArg[]): any;
+    remove<TValue>(path: IPath<TState, ValueMap<TValue> | TValue[]>, index: string | number | IndexSearch<TValue>, pathArgs?: PathArg[]): any;
 }

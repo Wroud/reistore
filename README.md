@@ -104,8 +104,7 @@ function* transformer(instruction, is, state) {
     }
     yield instruction;
 }
-const schema = createSchema(transformer);
-const store = createStore(schema, initState);
+const store = createStore(schema, initState, transformer);
 
 store.set(path.min, 1);
 const state = store.state;
@@ -130,14 +129,15 @@ import {
     Instructor
 } from "reistore";
 
-const initState = {
-    scope: {
-        min: 0,
-        max: 0
-    }
+const initState = { 
+    sum: 0
 };
-const schema = createSchema();
-const store = createStore(schema, initState);
+const scopeInitState = {
+    min: 0,
+    max: 0
+}
+const schema = createSchema(initState);
+const store = createStore(schema);
 
 function* transformer(instruction, is, state, storeState) {
     if(is(path.min) && instruction.value > state.max) {
@@ -146,9 +146,11 @@ function* transformer(instruction, is, state, storeState) {
         yield Instructor.createSet(path.min, instruction.value);
     }
     yield instruction;
+    yield Instructor.createSet(path.sum, storeState.max + storeState.min);
 }
-const scope = createScope(schema, f => f.scope, transformer);
+const scope = createScope(schema, f => f.scope, scopeInitState, transformer);
 const path = {
+    sum: Path.fromSelector(f => f.sum),
     min: scope.path.join(f => f.min),
     max: scope.path.join(f => f.max)
 }
@@ -157,6 +159,6 @@ store.set(path.min, 1);
 const state = scope.getState(store);
 // { min: 1, max: 1 }
 const storeState = store.state;
-// { scope: { min: 1, max: 1 } }
+// { sum: 2, scope: { min: 1, max: 1 } }
 ```
 

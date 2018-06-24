@@ -1,8 +1,8 @@
-import { IUpdateHandler } from "./interfaces";
-export declare class UpdateHandler implements IUpdateHandler {
+import { IUpdateHandler, Handler } from "./interfaces";
+export declare class UpdateHandler<TStore> implements IUpdateHandler<TStore> {
     private handlers;
     constructor();
-    update(): void;
-    subscribe(handler: () => void): void;
-    unSubscribe(handler: () => void): void;
+    update(state: TStore): void;
+    subscribe(handler: Handler<TStore>): this;
+    unSubscribe(handler: Handler<TStore>): this;
 }
