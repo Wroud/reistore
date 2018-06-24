@@ -1,5 +1,6 @@
-export interface IUpdateHandler {
-    update();
-    subscribe(handler: () => void);
-    unSubscribe(handler: () => void);
+export type Handler<TState> = (state: TState) => void
+export interface IUpdateHandler<TState> {
+    update(state: TState);
+    subscribe(handler: Handler<TState>): this;
+    unSubscribe(handler: Handler<TState>): this;
 }

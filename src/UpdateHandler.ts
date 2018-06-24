@@ -1,22 +1,24 @@
-import { IUpdateHandler } from "./interfaces";
+import { IUpdateHandler, Handler } from "./interfaces";
 
-export class UpdateHandler implements IUpdateHandler {
-    private handlers: Array<() => void>;
+export class UpdateHandler<TStore> implements IUpdateHandler<TStore> {
+    private handlers: Array<Handler<TStore>>;
     constructor() {
         this.handlers = [];
     }
-    update() {
+    update(state: TStore) {
         for (const handler of this.handlers) {
-            handler();
+            handler(state);
         }
     }
-    subscribe(handler: () => void) {
+    subscribe(handler: Handler<TStore>) {
         this.handlers.push(handler);
+        return this;
     }
-    unSubscribe(handler: () => void) {
+    unSubscribe(handler: Handler<TStore>) {
         const id = this.handlers.indexOf(handler);
         if (id > -1) {
             this.handlers.splice(id, 1);
         }
+        return this;
     }
 }

@@ -1,6 +1,9 @@
 import { IStore } from "./interfaces/IStore";
 
-export function* exchangeIterator<TValue, TResult>(iterator: IterableIterator<TValue>, action: (element: TValue) => IterableIterator<TResult>) {
+export function* exchangeIterator<TValue, TResult>(
+    iterator: IterableIterator<TValue>,
+    action: (element: TValue) => IterableIterator<TResult>
+) {
     for (const value of iterator) {
         yield* action(value);
     }

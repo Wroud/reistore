@@ -75,8 +75,15 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
     }
     get(object: TModel, defaultValue?: TValue, strict: boolean = false, args: PathArg[] = []): TValue | undefined {
         let link = object;
-        if (!strict) {
-            return this.selector(object);
+        try {
+            if (!strict) {
+                return this.tryReinitializeValue(object, args, this.selector(object), defaultValue);
+            }
+        } catch {
+            console.group("Reistate:Path");
+            console.warn("Cant get value by selector, get it slowly mode, is default value not properly initialized?");
+            console.warn("Path: ", this.path);
+            console.groupEnd();
         }
         for (const instruction of this.instructions) {
             let key = instruction.key as string;
@@ -87,12 +94,11 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
                     : arg;
             }
             if (instruction.isEnd) {
-                const result = link[key];
-                return result === undefined ? defaultValue : result;
+                return this.tryReinitializeValue(object, args, link[key], defaultValue);
             }
             link = link[key];
             if (link === undefined) {
-                return defaultValue as any;
+                return defaultValue;
             }
         }
         return object as any;
@@ -120,24 +126,36 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
         }
         return false;
     }
-    setImmutable(object: TModel, value: PathValue<TValue> | undefined | null, args: PathArg[]) {
+    setImmutable(object: TModel, value: PathValue<TValue> | undefined | null, args?: PathArg[]) {
         if (this.instructions.length === 0) {
-            throw new Error("Cant set value to zero path");
+            throw new Error("Reistate:Path Cant set value to zero path");
         }
         this.nextPath(0, this.instructions[0], object, value, args);
     }
-    private nextPath(index: number, { key: ikey, isArg, isEnd }: IPathInstruction, object: TModel, value: PathValue<TValue> | undefined | null, args: PathArg[]) {
+    private nextPath(
+        index: number,
+        { key: ikey, isArg, isEnd }: IPathInstruction,
+        object: TModel,
+        value: PathValue<TValue> | undefined | null,
+        args?: PathArg[]
+    ) {
         let key = ikey as number | string;
         if (isArg) {
-            const arg = args[key];
-            if (arg === undefined) {
-                key = Array.isArray(object) && (args.length === 0 || key === args.length - 1)
+            if (!args) {
+                key = Array.isArray(object)
                     ? (object as any).length
                     : undefined;
-            } else if (typeof arg === "function") {
-                key = arg(object);
             } else {
-                key = arg;
+                const arg = args[key];
+                if (arg === undefined) {
+                    key = Array.isArray(object) && (args.length === 0 || key === args.length - 1)
+                        ? (object as any).length
+                        : undefined;
+                } else if (typeof arg === "function") {
+                    key = arg(object);
+                } else {
+                    key = arg;
+                }
             }
         }
         if (isEnd) {
@@ -153,7 +171,7 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
 
         const nextInstruction = this.instructions[++index];
         let newObject = object[key];
-        if (!nextInstruction.isMutable) {
+        if (!nextInstruction.isMutable || newObject === undefined) {
             if (newObject === undefined) {
                 newObject = nextInstruction.isIndex ? [] : {};
             } else {
@@ -164,6 +182,17 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
             object[key] = newObject;
         }
         this.nextPath(index, nextInstruction, newObject, value, args);
+    }
+    private tryReinitializeValue(object, args, value, defaultValue) {
+        if (value === undefined && defaultValue !== undefined) {
+            console.group("Reistate:Path");
+            console.warn("Trying to get undefined value, is default value not properly initialized?");
+            console.warn("Path: ", this.path);
+            console.groupEnd();
+            this.set(object, defaultValue, args);
+            return defaultValue;
+        }
+        return value;
     }
 }
 

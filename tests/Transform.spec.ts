@@ -1,11 +1,7 @@
 import { expect } from "chai";
 import "mocha";
 
-import { Path } from "../src/Path";
-import { Store } from "../src/Store";
-import { StoreSchema } from "../src/StoreSchema";
-import { Scope } from "../src/Scope";
-import { Instructor } from "../src/Instructor";
+import { Path, createStore, createSchema, createScope, Instructor } from "../src/";
 
 describe("Transform", () => {
     interface IArray {
@@ -30,8 +26,8 @@ describe("Transform", () => {
             }
             yield instruction;
         }
-        const schema = new StoreSchema<IModel, IModel>(transformer);
-        const store = new Store<IModel>(schema);
+        const schema = createSchema<IModel>({} as IModel, transformer);
+        const store = createStore<IModel>(schema);
         const scopeValue = Path.fromSelector<IModel, number>(f => f.scope.value);
         const stateValue = Path.fromSelector<IModel, string>(f => f.value);
         function* scopeTransformer(instruction, is, state) {
@@ -40,7 +36,7 @@ describe("Transform", () => {
             }
             yield instruction;
         }
-        const scope = new Scope(schema, Path.fromSelector(f => f.scope), scopeTransformer);
+        const scope = createScope(schema, f => f.scope, {}, scopeTransformer);
         const expectedState = {
             value: "0",
             scope: {
@@ -53,12 +49,12 @@ describe("Transform", () => {
                 value: 1
             }
         }
-        store.instructor.set(Path.fromSelector(f => f.scope.value), 0);
+        store.set(scopeValue, 0);
         expect(store.state.scope.value).to.be.equal(0);
         expect(store.state.value).to.be.equal("0");
         expect(store.state).to.be.deep.equal(expectedState);
 
-        store.instructor.set(Path.fromSelector(f => f.value), "1");
+        store.set(stateValue, "1");
         expect(store.state.scope.value).to.be.equal(1);
         expect(store.state.value).to.be.equal("1");
         expect(store.state).to.be.deep.equal(expectedState1);

@@ -36,6 +36,8 @@ const efSuite = (iterations, initCounterStore, deepState, initNormalizedState, n
         bench("counter reducer", function () {
             increment();
             decrement();
+            increment();
+            decrement();
         });
         const increment2 = createEvent('increment');
         const decrement2 = createEvent('decrement');
@@ -51,6 +53,8 @@ const efSuite = (iterations, initCounterStore, deepState, initNormalizedState, n
         store.subscribe(() => { });
 
         bench("counter reducer deep", function () {
+            increment2();
+            decrement2();
             increment2();
             decrement2();
             scoped0Counter.getState();
