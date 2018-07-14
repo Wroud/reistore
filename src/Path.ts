@@ -82,9 +82,10 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
             }
         } catch {
             console.group("Reistate:Path");
-            console.warn("Cant get value by selector, get it slowly mode, is default value not properly initialized?");
+            console.warn("Cant get value by selector, is default value not properly initialized?");
             console.warn("Path: ", this.path);
             console.groupEnd();
+            return defaultValue;
         }
         for (const instruction of this.instructions) {
             let key = instruction.key as string;

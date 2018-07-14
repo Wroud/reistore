@@ -79,6 +79,37 @@ store.undoTransaction();
 console.log(store.state.counter);
 // value = 3
 ```
+### Injection API
+You also can use injection API that give you access to state in transaction and access to store modification.
+```js
+import {
+  createStore,
+  Path
+} from "reistore";
+
+const initState = {
+  counter: 0
+};
+const store = createStore(undefined, initState);
+const counter = Path.fromSelector(f => f.counter);
+
+store.beginTransaction();
+store.set(counter, 1);
+store.inject((state, instructor) => {
+  console.log(state.counter);
+  // value = 1
+  instructor.set(counter, state.counter + 1);
+});
+
+console.log(store.state.counter);
+// value = 0
+
+store.set(counter, v => v + 3);
+store.flush();
+
+console.log(store.state.counter);
+// value = 5
+```
 ### Min-Max transform
 ```js
 import {
@@ -96,11 +127,11 @@ const path = {
   min: Path.fromSelector(f => f.min),
   max: Path.fromSelector(f => f.max)
 }
-function* transformer(instruction, is, state) {
+function* transformer(instruction, is, getState) {
   yield instruction;
-  if (is(path.min) && state.min > state.max) {
+  if (is(path.min) && getState().min > getState().max) {
     yield Instructor.createSet(path.max, instruction.value);
-  } else if (is(path.max) && state.max < state.min) {
+  } else if (is(path.max) && getState().max < getState().min) {
     yield Instructor.createSet(path.min, instruction.value);
   }
 }
@@ -138,10 +169,10 @@ const scopeInitState = {
 }
 const schema = createSchema(initState);
 
-function* transformer(instruction, is, state, storeState) {
-  if (is(path.min) && instruction.value > state.max) {
+function* transformer(instruction, is, getState, storeState) {
+  if (is(path.min) && instruction.value > getState().max) {
     yield Instructor.createSet(path.max, instruction.value);
-  } else if (is(path.max) && instruction.value < state.min) {
+  } else if (is(path.max) && instruction.value < getState().min) {
     yield Instructor.createSet(path.min, instruction.value);
   }
   yield instruction;

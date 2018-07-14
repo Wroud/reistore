@@ -19,7 +19,7 @@ export abstract class Schema<TState, T> implements ISchema<TState, T> {
                 instruction => this.transformator(
                     instruction,
                     this.isInstruction(instruction),
-                    this.getState(state),
+                    () => this.getState(state),
                     state
                 )
             );
@@ -46,6 +46,7 @@ export abstract class Schema<TState, T> implements ISchema<TState, T> {
                     instruction.args === undefined
                     || args.length > instruction.args.length
                 )
+                || !instruction.path
             ) {
                 return false;
             }

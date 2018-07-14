@@ -1,5 +1,6 @@
 export enum InstructionType {
     set,
     add,
-    remove
+    remove,
+    inject
 }

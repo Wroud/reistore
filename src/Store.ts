@@ -4,9 +4,10 @@ import { IInstruction, IInstructor, IUpdateHandler, IPath, Handler } from "./int
 import { UpdateHandler } from "./UpdateHandler";
 import { IStore } from "./interfaces/IStore";
 import { StoreSchema } from "./StoreSchema";
-import { IndexSearch, ValueMap } from "./interfaces/IInstructor";
-import { PathArg, PathValue } from "./interfaces/IPath";
+import { IndexSearch, ValueMap, Injection } from "./interfaces/IInstructor";
+import { PathArg } from "./interfaces/IPath";
 import { ISchema, Transformator } from "./interfaces/ISchema";
+import { InstructionValue } from "./interfaces/IInstruction";
 
 type IStoreInstructor<TState> = IStore<TState> & IInstructor<TState>;
 
@@ -35,6 +36,9 @@ export class Store<TState> implements IStoreInstructor<TState> {
     set state(value: TState) {
         this.stateStore = value;
     }
+    getTransaction() {
+        return this.instructor.getTransaction();
+    }
     beginTransaction() {
         this.instructor.beginTransaction();
     }
@@ -44,26 +48,29 @@ export class Store<TState> implements IStoreInstructor<TState> {
     undoTransaction() {
         this.instructor.undoTransaction();
     }
+    inject(injection: Injection<TState>) {
+        this.instructor.inject(injection);
+    }
     set<TValue>(
         path: IPath<TState, TValue>,
-        value: PathValue<TValue>,
-        pathArgs?: PathArg[]
+        value: InstructionValue<TValue>,
+        ...pathArgs: PathArg[]
     ) {
-        this.instructor.set(path, value, pathArgs);
+        this.instructor.set(path, value, ...pathArgs);
     }
     add<TValue>(
         path: IPath<TState, ValueMap<TValue> | TValue | TValue[]>,
-        value: PathValue<TValue>,
-        pathArgs?: PathArg[]
+        value: InstructionValue<TValue>,
+        ...pathArgs: PathArg[]
     ) {
-        this.instructor.add(path, value, pathArgs);
+        this.instructor.add(path, value, ...pathArgs);
     }
     remove<TValue>(
         path: IPath<TState, ValueMap<TValue> | TValue[]>,
         index: string | number | IndexSearch<TValue>,
-        pathArgs?: PathArg[]
+        ...pathArgs: PathArg[]
     ) {
-        this.instructor.remove(path, index, pathArgs);
+        this.instructor.remove(path, index, ...pathArgs);
     }
     update(instructions: IterableIterator<IInstruction<TState, any>>) {
         if (this.isUpdating) {
@@ -75,36 +82,51 @@ export class Store<TState> implements IStoreInstructor<TState> {
         }
         this.isUpdating = true;
         this.stateStore = { ...this.stateStore as any };
+        this.transformState(instructions);
+        this.updateHandler.update(this.stateStore);
+        this.isUpdating = false;
+    }
+    private transformState(instructions: IterableIterator<IInstruction<TState, any>>) {
         instructions = this.schema.transform(this.stateStore, instructions);
-        for (const { type, path, value, index, args } of instructions) {
+        for (const { type, path, value, index, args, injection } of instructions) {
             switch (type) {
+                case InstructionType.inject:
+                    if (injection) {
+                        const inject = new Instructor(this);
+                        inject.beginTransaction();
+                        injection(this.stateStore, inject);
+                        this.transformState(inject.getTransaction()[Symbol.iterator]());
+                    }
+                    break;
                 case InstructionType.set:
                 case InstructionType.add:
-                    path.setImmutable(this.stateStore, value, args);
+                    if (path) {
+                        path.setImmutable(this.stateStore, value, args);
+                    }
                     break;
                 case InstructionType.remove:
                     if (index === undefined) {
                         console.error("You need specify index for removing element");
                         break;
                     }
-                    path.setImmutable(this.stateStore, curValue => {
-                        if (!Array.isArray(curValue)) {
-                            const id = typeof index === "function"
-                                ? (index as any)(curValue)
-                                : index;
-                            const { [id]: _, ...newValue } = curValue;
-                            return newValue;
-                        } else if (typeof index === "function") {
-                            return curValue.filter(index);
-                        } else {
-                            return curValue.filter((v, i) => i !== index);
-                        }
-                    }, args);
+                    if (path) {
+                        path.setImmutable(this.stateStore, curValue => {
+                            if (!Array.isArray(curValue)) {
+                                const id = typeof index === "function"
+                                    ? (index as any)(curValue)
+                                    : index;
+                                const { [id]: _, ...newValue } = curValue;
+                                return newValue;
+                            } else if (typeof index === "function") {
+                                return curValue.filter(index);
+                            } else {
+                                return curValue.filter((v, i) => i !== index);
+                            }
+                        }, args);
+                    }
                     break;
             }
         }
-        this.updateHandler.update(this.stateStore);
-        this.isUpdating = false;
     }
     subscribe(handler: Handler<TState>) {
         this.updateHandler.subscribe(handler);

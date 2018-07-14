@@ -157,4 +157,25 @@ describe("Store", () => {
         expect(store.state).to.be.deep.equal(expectedState);
     });
 
+    it("inject tests", () => {
+        const store = createStore<IModel>(undefined, { scope: { array: [] } } as any);
+        const expectedState = {
+            scope: {
+                array: [15, 2, true]
+            }
+        }
+        const arrayPath = Path.fromSelector((f: IModel) => f.scope.array["{}"]);
+        store.add(arrayPath, 1 as any);
+        store.add(arrayPath, 2 as any);
+        store.add(arrayPath, 3 as any);
+        store.inject((state, inject) => {
+            inject.set(arrayPath, 15 as any, 0);
+            inject.set(arrayPath, v => (v === 3 as any) as any, 2);
+        });
+        expect(store.state.scope.array[0]).to.be.equal(15);
+        expect(store.state.scope.array[1]).to.be.equal(2);
+        expect(store.state.scope.array[2]).to.be.equal(true);
+        expect(store.state).to.be.deep.equal(expectedState);
+    });
+
 });

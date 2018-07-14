@@ -1,7 +1,6 @@
 export type PathSelector<TModel, TValue> = (model: TModel) => TValue;
-
 export type PathArg = string | number | ((value: any) => string | number);
-export type PathValue<T> = T | ((value: T) => T)
+export type PathValue<T> = T | ((value: T) => T);
 
 export interface IPathInstruction {
     key: PathArg;

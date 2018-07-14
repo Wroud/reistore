@@ -28,6 +28,19 @@ const reistateSuite = (iterations, initCounterStore, deepState, initNormalizedSt
             storeCounter.set(counter, v => v - 1);
             storeCounter.flush();
         });
+        const storeInject = initStore(initCounterStore);
+        bench("counter reducer with inject", function () {
+            storeInject.beginTransaction();
+            storeInject.inject((state, inject) => {
+                inject.set(counter, state.scope.counter - 1);
+                inject.set(counter, state.scope.counter + 1);///counter
+            });
+            storeInject.inject((state, inject) => {
+                inject.set(counter, state.scope.counter - 1);
+                inject.set(counter, state.scope.counter + 1);///counter
+            });
+            storeInject.flush();
+        });
         const deepSchema = createSchema({ ...deepState });
         const storeDeepCounter = createStore(deepSchema)
             .subscribe(() => { });
