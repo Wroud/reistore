@@ -64,7 +64,7 @@ describe("Store", () => {
                 ]
             }
         }
-        store.set(Path.fromSelector(f => f.scope.array[0].number), 6);
+        store.set(Path.create(f => f.scope.array[0].number), 6);
         expect(store.state.scope.array[0].number).to.be.equal(6);
         expect(store.state).to.be.deep.equal(expectedState);
     });
@@ -83,10 +83,10 @@ describe("Store", () => {
                 ]
             }
         }
-        store.add(Path.fromSelector(f => f.scope.array[0]), {
+        store.add(Path.create(f => f.scope.array[0]), {
             number: 6
         });
-        store.add(Path.fromSelector(f => f.scope.array[2]), {
+        store.add(Path.create(f => f.scope.array[2]), {
             number: 6
         });
         expect(store.state.scope.array[0].number).to.be.equal(6);
@@ -106,12 +106,12 @@ describe("Store", () => {
         };
         const expectState = { scope: { array: [] } };
         const store = createStore<IModel>(undefined, init as IModel);
-        store.instructor.add(Path.fromSelector(f => f.scope.array[2]), {
+        store.instructor.add(Path.create(f => f.scope.array[2]), {
             number: 6
         });
-        store.remove(Path.fromSelector(f => f.scope.array), 0);
+        store.remove(Path.create(f => f.scope.array), 0);
         expect(store.state.scope.array.length).to.be.equal(1);
-        store.remove(Path.fromSelector(f => f.scope.array), 0);
+        store.remove(Path.create(f => f.scope.array), 0);
         expect(store.state.scope.array.length).to.be.equal(0);
         expect(store.state).to.be.deep.equal(expectState);
     });
@@ -130,10 +130,10 @@ describe("Store", () => {
                 }
             }
         }
-        store.instructor.set(Path.fromSelector(f => f.scope.indexedArray[0]), {
+        store.instructor.set(Path.create(f => f.scope.indexedArray[0]), {
             number: 6
         });
-        store.instructor.set(Path.fromSelector(f => f.scope.indexedArray[2]), {
+        store.instructor.set(Path.create(f => f.scope.indexedArray[2]), {
             number: 6
         });
         expect(store.state.scope.indexedArray[0].number).to.be.equal(6);
@@ -148,9 +148,9 @@ describe("Store", () => {
                 array: [1, 2, 3]
             }
         }
-        store.instructor.add(Path.fromSelector(f => f.scope.array["{}"]), 1 as any);
-        store.instructor.add(Path.fromSelector(f => f.scope.array["{}"]), 2 as any);
-        store.instructor.add(Path.fromSelector(f => f.scope.array["{}"]), 3 as any);
+        store.instructor.add(Path.create(f => f.scope.array["{}"]), 1 as any);
+        store.instructor.add(Path.create(f => f.scope.array["{}"]), 2 as any);
+        store.instructor.add(Path.create(f => f.scope.array["{}"]), 3 as any);
         expect(store.state.scope.array[0]).to.be.equal(1);
         expect(store.state.scope.array[1]).to.be.equal(2);
         expect(store.state.scope.array[2]).to.be.equal(3);
@@ -164,7 +164,7 @@ describe("Store", () => {
                 array: [15, 2, true]
             }
         }
-        const arrayPath = Path.fromSelector((f: IModel) => f.scope.array["{}"]);
+        const arrayPath = Path.create((f: IModel) => f.scope.array["{}"]);
         store.add(arrayPath, 1 as any);
         store.add(arrayPath, 2 as any);
         store.add(arrayPath, 3 as any);

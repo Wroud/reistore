@@ -1,7 +1,7 @@
 const { reduxSuite } = require("./redux");
 const { efSuite } = require("./effector");
 const { pathonSuite } = require("./pathon");
-const { reistateSuite } = require("./reistate");
+const { reistoreSuite } = require("./reistore");
 
 const initCounterStore = {
     scope: {
@@ -25,7 +25,7 @@ const deepState = {
         }
     }
 };
-const normalizedCount = 1;
+const normalizedCount = 2;
 
 const iterations = 1000;
 suite("immutable noop", function () {
@@ -49,6 +49,6 @@ suite("immutable noop", function () {
     });
 });
 reduxSuite(iterations, initCounterStore, deepState, initNormalizedState, normalizedCount);
-reistateSuite(iterations, initCounterStore, deepState, initNormalizedState, normalizedCount);
+reistoreSuite(iterations, initCounterStore, deepState, initNormalizedState, normalizedCount);
 efSuite(iterations, initCounterStore, deepState, initNormalizedState, normalizedCount);
 // pathonSuite(iterations, initCounterStore, deepState, initNormalizedState, normalizedCount);

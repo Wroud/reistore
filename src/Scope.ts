@@ -38,6 +38,9 @@ export class Scope<TState, TParent, TScope>
             ? this.path.get(state.state, this.initState) as TScope
             : this.path.get(state, this.initState) as TScope;
     }
+    joinPath<TValue>(path: IPath<TScope, TValue> | PathSelector<TScope, TValue>) {
+        return this.path.join(path);
+    }
     createScope<TNewScope>(
         scope: IPath<TScope, TNewScope> | PathSelector<TScope, TNewScope>,
         initState?: TNewScope,
@@ -55,7 +58,7 @@ export function createScope<TState, TModel, TScope>(
     transformator?: Transformator<TState, TScope>,
     mutateParent?: boolean
 ) {
-    const rpath = isPath<TState, TScope>(path) ? path : Path.fromSelector(path);
+    const rpath = isPath<TState, TScope>(path) ? path : Path.create(path);
     return new Scope(parent, rpath, initState, transformator, mutateParent);
 }
 

@@ -12,9 +12,10 @@ describe("Path", () => {
         };
     }
 
-    const path0 = Path.fromSelector((f: ITest) => f.a);
-    const path1 = Path.fromSelector((f: ITest) => f.a.b);
-    const path2 = path0.join(Path.fromSelector((a: ITest["a"]) => a.b));
+    const path0 = Path.create((f: ITest) => f.a);
+    const path1 = Path.create((f: ITest) => f.a.b);
+    const path2 = path0.join(Path.create((a: ITest["a"]) => a.b));
+    // console.log(path2.getSelectors().map(s => s.instructions));
 
     it("includes closest", () => {
         expect(path0.includes(path1)).to.be.equal(false);

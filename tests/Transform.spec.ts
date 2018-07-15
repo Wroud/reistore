@@ -27,11 +27,11 @@ describe("Transform", () => {
             yield instruction;
         }
         const schema = createSchema<IModel>({} as IModel, transformer);
-        const scopeValue = Path.fromSelector<IModel, number>(f => f.scope.value);
-        const stateValue = Path.fromSelector<IModel, string>(f => f.value);
+        const scopeValue = Path.create<IModel, number>(f => f.scope.value);
+        const stateValue = Path.create<IModel, string>(f => f.value);
         function* scopeTransformer(instruction, is, state) {
-            if (is(Path.fromSelector(f => f.value)) && instruction.value !== undefined) {
-                yield Instructor.createSet(Path.fromSelector(f => f.scope.value), parseInt(instruction.value));
+            if (is(Path.create(f => f.value)) && instruction.value !== undefined) {
+                yield Instructor.createSet(Path.create(f => f.scope.value), parseInt(instruction.value));
             }
             yield instruction;
         }

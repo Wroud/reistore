@@ -1,45 +1,51 @@
 import { isArray, isNumber } from "util";
-import { IPath, PathSelector, IPathInstruction, PathArg, PathValue } from "./interfaces/IPath";
+import { IPath, PathSelector, IPathInstruction, PathArg, PathValue, IPathSelector, SelectorType } from "./interfaces/IPath";
 
 export class Path<TModel, TValue> implements IPath<TModel, TValue> {
-    static fromSelector<TModel, TValue>(selector: PathSelector<TModel, TValue>) {
-        const { path, instructions } = getPathInstructions(selector, {});
-        return new Path<TModel, TValue>(selector, path, instructions);
-    }
-    static fromPath<TModel = any, TValue = any>(path: string) {
-        const parts = path.replace(/(\[(\d)\])/g, ".$2").split(".");
-        const instructions: IPathInstruction[] = [];
-        for (const unit of parts) {
-            const isIndex = !isNaN(unit.toString() as any);
-            instructions.push({ isIndex, key: unit.toString(), isMutable: false });
-        }
-        if (instructions.length > 0) {
-            instructions[instructions.length - 1].isEnd = true;
-        }
-        return new Path<TModel, TValue>(f => f as any, path, instructions);
+    static create<TModel, TValue>(selector: PathSelector<TModel, TValue>) {
+        const { path, pathSelector } = getPathInstructions(selector, {});
+        return new Path<TModel, TValue>([pathSelector], path);
     }
     static root<TModel>() {
-        return new Path<TModel, TModel>(f => f, "", []);
+        return new Path<TModel, TModel>(
+            [{
+                selector: f => f,
+                instructions: [],
+                type: SelectorType.safe,
+                isMutable: true
+            }],
+            ""
+        );
     }
-    private selector: PathSelector<TModel, TValue>;
+    private selectors: IPathSelector<any, any>[];
     private path: string;
-    private instructions: IPathInstruction[];
-    constructor(selector: PathSelector<TModel, TValue>, path: string, instructions: IPathInstruction[]) {
-        this.selector = selector;
-        this.instructions = instructions;
+    private constructor(selector: IPathSelector<any, any>[], path: string) {
+        this.selectors = selector;
         this.path = path;
     }
     toMutable() {
-        return new Path(this.selector, this.path, this.instructions.map(i => ({ ...i, isMutable: true })))
+        return new Path<TModel, TValue>(
+            this.selectors.map(s => ({
+                ...s,
+                isMutable: s.type === SelectorType.safe
+            })),
+            this.path
+        );
     }
     getPath() {
         return this.path;
     }
     getSelector() {
-        return this.selector;
+        return (data: TModel) => {
+            let link: TValue = data as any;
+            for (const { selector } of this.selectors) {
+                link = selector(link);
+            }
+            return link;
+        };
     }
-    getInstructions() {
-        return this.instructions;
+    getSelectors() {
+        return this.selectors;
     }
     includes(path: IPath<TModel, any>, strict: boolean = false) {
         if (this.path.length === 0) {
@@ -59,25 +65,43 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
             : this.path.startsWith(str);
     }
     join<T>(spath: IPath<TValue, T> | PathSelector<TValue, T>) {
-        const path = isPath<TValue, T>(spath)
+        const path: IPath<TValue, T> = isPath<TValue, T>(spath)
             ? spath
-            : Path.fromSelector(spath);
+            : Path.create(spath);
+        const rawPath = path.getPath();
         const newPath = this.path.length > 0
-            ? path.getPath().length > 0
-                ? this.path + (path.getPath()[0] === "[" ? "" : ".") + path.getPath()
+            ? rawPath.length > 0
+                ? this.path + (rawPath[0] === "[" ? "" : ".") + rawPath
                 : this.path
-            : path.getPath();
+            : rawPath;
+        let argIndex = 0;
         return new Path<TModel, T>(
-            f => path.getSelector()(this.selector(f)),
-            newPath,
-            [...this.instructions.map(i => ({ ...i, isEnd: false })), ...path.getInstructions()]
+            [
+                ...this.selectors.map(selector => ({
+                    ...selector,
+                    isEnd: false,
+                    instructions: selector.instructions.map(instruction => ({
+                        ...instruction,
+                        key: instruction.isArg ? argIndex++ : instruction.key,
+                        isEnd: false
+                    }))
+                })),
+                ...path.getSelectors().map(selector => ({
+                    ...selector,
+                    instructions: selector.instructions.map(instruction => ({
+                        ...instruction,
+                        key: instruction.isArg ? argIndex++ : instruction.key
+                    }))
+                }))
+            ],
+            newPath
         );
     }
-    get(object: TModel, defaultValue?: TValue, strict: boolean = false, args: PathArg[] = []): TValue | undefined {
+    get(object: TModel, defaultValue?: TValue, strict: boolean = false, args?: PathArg[]): TValue | undefined {
         let link = object;
         try {
-            if (!strict) {
-                const result = this.selector(object);
+            if (!strict && (!args || args.length === 0)) {
+                const result = this.getSelector()(object);
                 return result === undefined ? defaultValue : result;
             }
         } catch {
@@ -87,58 +111,102 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
             console.groupEnd();
             return defaultValue;
         }
-        for (const instruction of this.instructions) {
-            let key = instruction.key as string;
-            if (instruction.isArg) {
-                let arg = args[key];
-                key = typeof arg === "function"
-                    ? arg(link)
-                    : arg;
+        for (const { selector, type, instructions } of this.selectors) {
+            if (type === SelectorType.safe) {
+                link = selector(link);
+                continue;
             }
-            if (instruction.isEnd) {
-                return this.tryReinitializeValue(object, args, link[key], defaultValue);
-            }
-            link = link[key];
-            if (link === undefined) {
-                console.group("Reistate:Path");
-                console.warn("Trying to get value from undefined, is default value not properly initialized?");
-                console.warn("Path: ", this.path);
-                console.groupEnd();
-                return defaultValue;
+            for (const { key: iKey, isArg, isEnd } of instructions) {
+                let key = iKey as string;
+                if (!args) {
+                    console.group("Reistate:Path");
+                    console.warn("Trying to get value from path with arguments, but no arguments passed.");
+                    console.warn("Path: ", this.path);
+                    console.groupEnd();
+                } else if (isArg) {
+                    let arg = args[key];
+                    key = typeof arg === "function"
+                        ? arg(link)
+                        : arg;
+                }
+                if (isEnd) {
+                    return this.tryReinitializeValue(object, args, link[key], defaultValue);
+                }
+                link = link[key];
+                if (link === undefined) {
+                    console.group("Reistate:Path");
+                    console.warn("Trying to get value from undefined, is default value not properly initialized?");
+                    console.warn("Path: ", this.path);
+                    console.groupEnd();
+                    return defaultValue;
+                }
             }
         }
         return object as any;
     }
-    set(object: TModel, value?: PathValue<TValue> | null, args: PathArg[] = []) {
+    set(object: TModel, value?: PathValue<TValue> | null, args?: PathArg[]) {
         let link = object;
-        for (const instruction of this.instructions) {
-            let key = instruction.key as string;
-            if (instruction.isArg) {
-                let arg = args[key];
-                key = typeof arg === "function"
-                    ? arg(link)
-                    : arg;
+        for (const { instructions, isEnd, selector, type } of this.selectors) {
+            if (instructions.length === 0) {
+                throw new Error("Reistate:Path Cant set value to zero path");
             }
-            if (instruction.isEnd) {
-                link[key] = typeof value === "function"
-                    ? value(link[key])
-                    : value;
-                return true;
+            if (type === SelectorType.safe && !isEnd) {
+                link = selector(link);
+                continue;
             }
-            link = link[key];
-            if (link === undefined) {
-                return false;
+            for (const { key: iKey, isArg, isEnd } of instructions) {
+                let key = iKey as number | string;
+                if (isArg) {
+                    if (!args) {
+                        key = Array.isArray(link)
+                            ? (link as any).length
+                            : undefined;
+                    } else {
+                        const arg = args[key];
+                        if (arg === undefined) {
+                            key = Array.isArray(link) && (args.length === 0 || key === args.length - 1)
+                                ? (link as any).length
+                                : undefined;
+                        } else if (typeof arg === "function") {
+                            key = arg(link);
+                        } else {
+                            key = arg;
+                        }
+                    }
+                }
+                if (isEnd) {
+                    if (value === null) {
+                        delete object[key];
+                    } else {
+                        object[key] = typeof value === "function"
+                            ? value(link[key])
+                            : value;
+                    }
+                    return true;
+                }
+                link = link[key];
+                if (link === undefined) {
+                    return false;
+                }
             }
         }
         return false;
     }
     setImmutable(object: TModel, value: PathValue<TValue> | undefined | null, args?: PathArg[]) {
-        if (this.instructions.length === 0) {
-            throw new Error("Reistate:Path Cant set value to zero path");
+        let link = object;
+        for (const { selector, instructions, isEnd, isMutable } of this.selectors) {
+            if (isMutable && !isEnd) {
+                link = selector(link);
+                continue;
+            }
+            if (instructions.length === 0) {
+                throw new Error("Reistate:Path Cant set value to zero path");
+            }
+            link = this.nextPath(instructions, 0, instructions[0], link, value, args);
         }
-        this.nextPath(0, this.instructions[0], object, value, args);
     }
     private nextPath(
+        instructions: IPathInstruction[],
         index: number,
         { key: ikey, isArg, isEnd }: IPathInstruction,
         object: TModel,
@@ -175,9 +243,12 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
             return;
         }
 
-        const nextInstruction = this.instructions[++index];
+        if (instructions.length === index + 1) {
+            return object;
+        }
+        const nextInstruction = instructions[++index];
         let newObject = object[key];
-        if (!nextInstruction.isMutable || newObject === undefined) {
+        if (newObject === undefined) {
             if (newObject === undefined) {
                 newObject = nextInstruction.isIndex ? [] : {};
             } else {
@@ -187,7 +258,7 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
             }
             object[key] = newObject;
         }
-        this.nextPath(index, nextInstruction, newObject, value, args);
+        return this.nextPath(instructions, index, nextInstruction, newObject, value, args);
     }
     private tryReinitializeValue(object, args, value, defaultValue) {
         if (value === undefined && defaultValue !== undefined) {
@@ -205,6 +276,7 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
 export function getPathInstructions(selector: (obj) => any, data) {
     let path = "";
     let argIndex = 0;
+    let safe = true;
     const instructions: IPathInstruction[] = [];
     const proxyFactory = object => new Proxy(object, {
         get(target, prop) {
@@ -214,9 +286,10 @@ export function getPathInstructions(selector: (obj) => any, data) {
             const propAsString = isNumber(prop) ? prop : prop.toString();
             const isIndex = !isNaN(propAsString as any);
             if (propAsString === "{}") {
-                instructions.push({ isIndex, key: argIndex++, isMutable: false, isArg: true });
+                safe = false;
+                instructions.push({ isIndex, key: argIndex++, isArg: true });
             } else {
-                instructions.push({ isIndex, key: propAsString, isMutable: false });
+                instructions.push({ isIndex, key: propAsString });
             }
             path += isIndex
                 ? `[${propAsString}]`
@@ -239,9 +312,17 @@ export function getPathInstructions(selector: (obj) => any, data) {
     if (instructions.length > 0) {
         instructions[instructions.length - 1].isEnd = true;
     }
-    return { path, instructions };
+    return {
+        path,
+        pathSelector: {
+            selector,
+            instructions,
+            type: safe ? SelectorType.safe : SelectorType.unsafe,
+            isEnd: true
+        } as IPathSelector<any, any>
+    };
 }
 
 export function isPath<TModel, TValue>(object): object is Path<TModel, TValue> | IPath<TModel, TValue> {
-    return "fromSelector" in object || "instructions" in object;
+    return "fromSelector" in object || "selectors" in object;
 }

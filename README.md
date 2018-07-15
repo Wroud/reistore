@@ -36,9 +36,16 @@ const initState = {
     counter: 0
 };
 const store = createStore(undefined, initState);
-const counter = Path.fromSelector(f => f.counter);
+const counter = Path.create(f => f.counter);
+
+store.subscibe((state, changes) => {
+  if(changes.some(path => path.includes(counter))) {
+    console.log("Counter value: ", state.counter);
+  }
+});
 
 store.set(counter, 1);
+// > Counter value: 1
 const value = store.state.counter;
 // value = 1
 ```
@@ -55,7 +62,7 @@ const initState = {
   counter: 0
 };
 const store = createStore(undefined, initState);
-const counter = Path.fromSelector(f => f.counter);
+const counter = Path.create(f => f.counter);
 
 store.beginTransaction();
 store.set(counter, 1);
@@ -91,7 +98,7 @@ const initState = {
   counter: 0
 };
 const store = createStore(undefined, initState);
-const counter = Path.fromSelector(f => f.counter);
+const counter = Path.create(f => f.counter);
 
 store.beginTransaction();
 store.set(counter, 1);
@@ -124,8 +131,8 @@ const initState = {
   max: 0
 };
 const path = {
-  min: Path.fromSelector(f => f.min),
-  max: Path.fromSelector(f => f.max)
+  min: Path.create(f => f.min),
+  max: Path.create(f => f.max)
 }
 function* transformer(instruction, is, getState) {
   yield instruction;
@@ -180,9 +187,9 @@ function* transformer(instruction, is, getState, storeState) {
 }
 const scope = createScope(schema, f => f.scope, scopeInitState, transformer);
 const path = {
-  sum: Path.fromSelector(f => f.sum),
-  min: scope.path.join(f => f.min),
-  max: scope.path.join(f => f.max)
+  sum: Path.create(f => f.sum),
+  min: scope.joinPath(f => f.min),
+  max: scope.joinPath(f => f.max)
 }
 const store = createStore(schema);
 

@@ -17,13 +17,20 @@ export class Store<TState> implements IStoreInstructor<TState> {
     schema: ISchema<TState, TState>;
     private stateStore!: TState;
     private isUpdating: boolean;
-    constructor(schema?: ISchema<TState, TState>, initState?: TState, transformator?: Transformator<TState, TState>) {
+    private isImmutable: boolean;
+    constructor(
+        schema?: ISchema<TState, TState>,
+        initState?: TState,
+        transformator?: Transformator<TState, TState>,
+        isImmutable: boolean = true
+    ) {
         if (!schema) {
             schema = new StoreSchema(initState, transformator);
         }
         if (initState) {
             this.stateStore = { ...initState as any };
         }
+        this.isImmutable = isImmutable;
         this.isUpdating = false;
         this.schema = schema;
         this.instructor = new Instructor(this);
@@ -81,13 +88,16 @@ export class Store<TState> implements IStoreInstructor<TState> {
             return;
         }
         this.isUpdating = true;
-        this.stateStore = { ...this.stateStore as any };
-        this.transformState(instructions);
-        this.updateHandler.update(this.stateStore);
+        if (this.isImmutable) {
+            this.stateStore = { ...this.stateStore as any };
+        }
+        const updateList = this.transformState(instructions);
+        this.updateHandler.update(this.stateStore, updateList);
         this.isUpdating = false;
     }
     private transformState(instructions: IterableIterator<IInstruction<TState, any>>) {
         instructions = this.schema.transform(this.stateStore, instructions);
+        const updateList: IPath<TState, any>[] = [];
         for (const { type, path, value, index, args, injection } of instructions) {
             switch (type) {
                 case InstructionType.inject:
@@ -95,13 +105,18 @@ export class Store<TState> implements IStoreInstructor<TState> {
                         const inject = new Instructor(this);
                         inject.beginTransaction();
                         injection(this.stateStore, inject);
-                        this.transformState(inject.getTransaction()[Symbol.iterator]());
+                        updateList.push(...this.transformState(inject.getTransaction()[Symbol.iterator]()));
                     }
                     break;
                 case InstructionType.set:
                 case InstructionType.add:
                     if (path) {
-                        path.setImmutable(this.stateStore, value, args);
+                        updateList.push(path);
+                        if (this.isImmutable) {
+                            path.setImmutable(this.stateStore, value, args);
+                        } else {
+                            path.set(this.stateStore, value, args);
+                        }
                     }
                     break;
                 case InstructionType.remove:
@@ -110,23 +125,41 @@ export class Store<TState> implements IStoreInstructor<TState> {
                         break;
                     }
                     if (path) {
-                        path.setImmutable(this.stateStore, curValue => {
-                            if (!Array.isArray(curValue)) {
-                                const id = typeof index === "function"
-                                    ? (index as any)(curValue)
-                                    : index;
-                                const { [id]: _, ...newValue } = curValue;
-                                return newValue;
-                            } else if (typeof index === "function") {
-                                return curValue.filter(index);
-                            } else {
-                                return curValue.filter((v, i) => i !== index);
-                            }
-                        }, args);
+                        updateList.push(path);
+                        if (this.isImmutable) {
+                            path.setImmutable(this.stateStore, curValue => {
+                                if (!Array.isArray(curValue)) {
+                                    const id = typeof index === "function"
+                                        ? (index as any)(curValue)
+                                        : index;
+                                    const { [id]: _, ...newValue } = curValue;
+                                    return newValue;
+                                } else if (typeof index === "function") {
+                                    return curValue.filter(index);
+                                } else {
+                                    return curValue.filter((v, i) => i !== index);
+                                }
+                            }, args);
+                        } else {
+                            path.set(this.stateStore, curValue => {
+                                if (!Array.isArray(curValue)) {
+                                    const id = typeof index === "function"
+                                        ? (index as any)(curValue)
+                                        : index;
+                                    const { [id]: _, ...newValue } = curValue;
+                                    return newValue;
+                                } else if (typeof index === "function") {
+                                    return curValue.filter(index);
+                                } else {
+                                    return curValue.filter((v, i) => i !== index);
+                                }
+                            }, args);
+                        }
                     }
                     break;
             }
         }
+        return updateList;
     }
     subscribe(handler: Handler<TState>) {
         this.updateHandler.subscribe(handler);
@@ -138,6 +171,11 @@ export class Store<TState> implements IStoreInstructor<TState> {
     }
 }
 
-export function createStore<TState>(schema?: ISchema<TState, TState>, initState?: TState, transformator?: Transformator<TState, TState>) {
-    return new Store(schema, initState, transformator);
+export function createStore<TState>(
+    schema?: ISchema<TState, TState>,
+    initState?: TState,
+    transformator?: Transformator<TState, TState>,
+    isImmutable: boolean = true
+) {
+    return new Store(schema, initState, transformator, isImmutable);
 }
