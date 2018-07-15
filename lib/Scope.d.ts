@@ -7,6 +7,7 @@ export declare class Scope<TState, TParent, TScope> extends Schema<TState, TScop
     constructor(parent: ISchema<TState, TParent>, path: IPath<TState, TScope>, initState?: TScope, transformator?: Transformator<TState, TScope>, mutateParent?: boolean);
     setInitState(store: IStore<TState>): void;
     getState(state: TState | IStore<TState>): TScope;
+    joinPath<TValue>(path: IPath<TScope, TValue> | PathSelector<TScope, TValue>): IPath<TState, TValue>;
     createScope<TNewScope>(scope: IPath<TScope, TNewScope> | PathSelector<TScope, TNewScope>, initState?: TNewScope, transformator?: Transformator<TState, TNewScope>, mutateParent?: boolean): IScope<TState, TScope, TNewScope>;
 }
 export declare function createScope<TState, TModel, TScope>(parent: ISchema<TState, TModel>, path: IPath<TState, TScope> | PathSelector<TState, TScope>, initState?: TScope, transformator?: Transformator<TState, TScope>, mutateParent?: boolean): Scope<TState, TModel, TScope>;

@@ -1,20 +1,18 @@
-import { IPath, PathSelector, IPathInstruction, PathArg, PathValue } from "./interfaces/IPath";
+import { IPath, PathSelector, PathArg, PathValue, IPathSelector } from "./interfaces/IPath";
 export declare class Path<TModel, TValue> implements IPath<TModel, TValue> {
-    static fromSelector<TModel, TValue>(selector: PathSelector<TModel, TValue>): Path<TModel, TValue>;
-    static fromPath<TModel = any, TValue = any>(path: string): Path<TModel, TValue>;
+    static create<TModel, TValue>(selector: PathSelector<TModel, TValue>): Path<TModel, TValue>;
     static root<TModel>(): Path<TModel, TModel>;
-    private selector;
+    private selectors;
     private path;
-    private instructions;
-    constructor(selector: PathSelector<TModel, TValue>, path: string, instructions: IPathInstruction[]);
+    private constructor();
     toMutable(): Path<TModel, TValue>;
     getPath(): string;
-    getSelector(): PathSelector<TModel, TValue>;
-    getInstructions(): IPathInstruction[];
+    getSelector(): (data: TModel) => TValue;
+    getSelectors(): IPathSelector<any, any>[];
     includes(path: IPath<TModel, any>, strict?: boolean): boolean;
     includes2(path: (model: TModel) => any, strict?: boolean): boolean;
-    join<T>(spath: IPath<TValue, T> | PathSelector<TValue, T>): any;
-    get(object: TModel, defaultValue?: TValue, strict?: boolean, args?: PathArg[]): TValue | undefined;
+    join<T>(spath: IPath<TValue, T> | PathSelector<TValue, T>): Path<TModel, T>;
+    get(object: TModel, defaultValue?: TValue, args?: PathArg[]): TValue | undefined;
     set(object: TModel, value?: PathValue<TValue> | null, args?: PathArg[]): boolean;
     setImmutable(object: TModel, value: PathValue<TValue> | undefined | null, args?: PathArg[]): void;
     private nextPath;
@@ -22,6 +20,6 @@ export declare class Path<TModel, TValue> implements IPath<TModel, TValue> {
 }
 export declare function getPathInstructions(selector: (obj: any) => any, data: any): {
     path: string;
-    instructions: IPathInstruction[];
+    pathSelector: IPathSelector<any, any>;
 };
 export declare function isPath<TModel, TValue>(object: any): object is Path<TModel, TValue> | IPath<TModel, TValue>;

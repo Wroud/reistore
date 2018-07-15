@@ -4,20 +4,22 @@ import { IndexSearch, ValueMap, Injection } from "./interfaces/IInstructor";
 import { PathArg } from "./interfaces/IPath";
 import { ISchema, Transformator } from "./interfaces/ISchema";
 import { InstructionValue } from "./interfaces/IInstruction";
-declare type IStoreInstructor<TState> = IStore<TState> & IInstructor<TState>;
+export declare type IStoreInstructor<TState> = IStore<TState> & IInstructor<TState>;
 export declare class Store<TState> implements IStoreInstructor<TState> {
     instructor: IInstructor<TState>;
     updateHandler: IUpdateHandler<TState>;
     schema: ISchema<TState, TState>;
     private stateStore;
     private isUpdating;
-    constructor(schema?: ISchema<TState, TState>, initState?: TState, transformator?: Transformator<TState, TState>);
+    private isImmutable;
+    constructor(schema?: ISchema<TState, TState>, initState?: TState, transformator?: Transformator<TState, TState>, isImmutable?: boolean);
     state: TState;
     getTransaction(): any;
     beginTransaction(): void;
     flush(): void;
     undoTransaction(): void;
     inject(injection: Injection<TState>): void;
+    get<TValue>(path: IPath<TState, TValue>, ...pathArgs: PathArg[]): TValue | undefined;
     set<TValue>(path: IPath<TState, TValue>, value: InstructionValue<TValue>, ...pathArgs: PathArg[]): void;
     add<TValue>(path: IPath<TState, ValueMap<TValue> | TValue | TValue[]>, value: InstructionValue<TValue>, ...pathArgs: PathArg[]): void;
     remove<TValue>(path: IPath<TState, ValueMap<TValue> | TValue[]>, index: string | number | IndexSearch<TValue>, ...pathArgs: PathArg[]): void;
@@ -26,5 +28,4 @@ export declare class Store<TState> implements IStoreInstructor<TState> {
     subscribe(handler: Handler<TState>): this;
     unSubscribe(handler: Handler<TState>): this;
 }
-export declare function createStore<TState>(schema?: ISchema<TState, TState>, initState?: TState, transformator?: Transformator<TState, TState>): Store<TState>;
-export {};
+export declare function createStore<TState>(schema?: ISchema<TState, TState>, initState?: TState, transformator?: Transformator<TState, TState>, isImmutable?: boolean): Store<TState>;
