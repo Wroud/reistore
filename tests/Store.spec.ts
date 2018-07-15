@@ -69,6 +69,26 @@ describe("Store", () => {
         expect(store.state).to.be.deep.equal(expectedState);
     });
 
+    it("set joined path", () => {
+        const store = createStore<IModel>(undefined, { scope: { array: [] } } as any);
+        const expectedState = {
+            scope: {
+                array: [
+                    {
+                        number: 6
+                    }
+                ]
+            }
+        }
+        const path = Path.create((f: IModel) => f.scope.array["{}"]);
+        const number = path.join(f => f.number);
+        console.log(store.state);
+        store.set(number, 6, 0);
+        console.log(store.state);
+        expect(store.state.scope.array[0].number).to.be.equal(6);
+        expect(store.state).to.be.deep.equal(expectedState);
+    });
+
     it("add", () => {
         const store = createStore<IModel>();
         const expectedState = {

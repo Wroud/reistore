@@ -196,26 +196,42 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
         return false;
     }
     setImmutable(object: TModel, value: PathValue<TValue> | undefined | null, args?: PathArg[]) {
-        let link = object;
+        let link = { object, key: undefined };
         for (const { selector, instructions, isEnd, isMutable } of this.selectors) {
             if (isMutable && !isEnd) {
-                link = selector(link);
+                link.object = selector(link.object);
                 continue;
             }
             if (instructions.length === 0) {
                 throw new Error("Reistate:Path Cant set value to zero path");
             }
-            link = this.nextPath(instructions, 0, instructions[0], link, value, args);
+            link = this.nextPath(instructions, 0, instructions[0], link.object, link.key, value, args);
         }
     }
     private nextPath(
         instructions: IPathInstruction[],
         index: number,
-        { key: ikey, isArg, isEnd }: IPathInstruction,
+        { key: ikey, isArg, isEnd, isIndex }: IPathInstruction,
         object: TModel,
+        currentKey: string | number | undefined,
         value: PathValue<TValue> | undefined | null,
         args?: PathArg[]
     ) {
+        if (currentKey !== undefined) {
+            let newObject = object[currentKey];
+            if (newObject === undefined) {
+                if (newObject === undefined) {
+                    newObject = isIndex ? [] : {};
+                } else {
+                    newObject = isArray(newObject)
+                        ? [...newObject]
+                        : { ...newObject };
+                }
+                object[currentKey] = newObject;
+            }
+            object = newObject;
+        }
+
         let key = ikey as number | string;
         if (isArg) {
             if (!args) {
@@ -247,21 +263,10 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
         }
 
         if (instructions.length === index + 1) {
-            return object;
+            return { object, key };
         }
         const nextInstruction = instructions[++index];
-        let newObject = object[key];
-        if (newObject === undefined) {
-            if (newObject === undefined) {
-                newObject = nextInstruction.isIndex ? [] : {};
-            } else {
-                newObject = isArray(newObject)
-                    ? [...newObject]
-                    : { ...newObject };
-            }
-            object[key] = newObject;
-        }
-        return this.nextPath(instructions, index, nextInstruction, newObject, value, args);
+        return this.nextPath(instructions, index, nextInstruction, object, key, value, args);
     }
     private tryReinitializeValue(object, args, value, defaultValue) {
         if (value === undefined && defaultValue !== undefined) {
