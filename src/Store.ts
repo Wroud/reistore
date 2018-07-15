@@ -9,7 +9,7 @@ import { PathArg } from "./interfaces/IPath";
 import { ISchema, Transformator } from "./interfaces/ISchema";
 import { InstructionValue } from "./interfaces/IInstruction";
 
-type IStoreInstructor<TState> = IStore<TState> & IInstructor<TState>;
+export type IStoreInstructor<TState> = IStore<TState> & IInstructor<TState>;
 
 export class Store<TState> implements IStoreInstructor<TState> {
     instructor: IInstructor<TState>;
@@ -57,6 +57,12 @@ export class Store<TState> implements IStoreInstructor<TState> {
     }
     inject(injection: Injection<TState>) {
         this.instructor.inject(injection);
+    }
+    get<TValue>(
+        path: IPath<TState, TValue>,
+        ...pathArgs: PathArg[]
+    ) {
+        return path.get(this.stateStore, undefined, pathArgs);
     }
     set<TValue>(
         path: IPath<TState, TValue>,

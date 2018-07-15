@@ -28,7 +28,7 @@ export interface IPath<TModel, TValue> {
     toMutable(): IPath<TModel, TValue>;
     setImmutable(object: TModel, value?: PathValue<TValue> | null, args?: PathArg[]);
     set(object: TModel, value?: PathValue<TValue> | null, args?: PathArg[]);
-    get(object: TModel, defaultValue?: TValue, strict?: boolean, args?: PathArg[]): TValue | undefined;
+    get(object: TModel, defaultValue?: TValue, args?: PathArg[]): TValue | undefined;
     join<T>(spath: IPath<TValue, T> | PathSelector<TValue, T>): IPath<TModel, T>;
     includes(path: IPath<TModel, any>, strict?: boolean): boolean;
 }

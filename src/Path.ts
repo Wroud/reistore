@@ -97,23 +97,26 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
             newPath
         );
     }
-    get(object: TModel, defaultValue?: TValue, strict: boolean = false, args?: PathArg[]): TValue | undefined {
+    get(object: TModel, defaultValue?: TValue, args?: PathArg[]): TValue | undefined {
         let link = object;
-        try {
-            if (!strict && (!args || args.length === 0)) {
-                const result = this.getSelector()(object);
-                return result === undefined ? defaultValue : result;
-            }
-        } catch {
-            console.group("Reistate:Path");
-            console.warn("Cant get value by selector, is default value not properly initialized?");
-            console.warn("Path: ", this.path);
-            console.groupEnd();
-            return defaultValue;
-        }
         for (const { selector, type, instructions } of this.selectors) {
             if (type === SelectorType.safe) {
-                link = selector(link);
+                try {
+                    link = selector(link);
+                    if (link === undefined) {
+                        console.group("Reistate:Path");
+                        console.warn("Trying to get value from undefined, is default value not properly initialized?");
+                        console.warn("Path: ", this.path);
+                        console.groupEnd();
+                        return defaultValue;
+                    }
+                } catch {
+                    console.group("Reistate:Path");
+                    console.warn("Cant get value by selector, is default value not properly initialized?");
+                    console.warn("Path: ", this.path);
+                    console.groupEnd();
+                    return defaultValue;
+                }
                 continue;
             }
             for (const { key: iKey, isArg, isEnd } of instructions) {
@@ -142,7 +145,7 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
                 }
             }
         }
-        return object as any;
+        return link as any;
     }
     set(object: TModel, value?: PathValue<TValue> | null, args?: PathArg[]) {
         let link = object;
