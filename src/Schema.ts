@@ -1,5 +1,6 @@
-import { IInstruction, IPath, Transformator, ISchema, IStore, PathArg } from "./interfaces";
+import { IInstruction, Transformator, ISchema, IStore } from "./interfaces";
 import { exchangeIterator } from "./tools";
+import { Transformer } from "./Transformer";
 
 export abstract class Schema<TState, T> implements ISchema<TState, T> {
     transformator!: Transformator<TState, T>;
@@ -14,14 +15,10 @@ export abstract class Schema<TState, T> implements ISchema<TState, T> {
     abstract getState(state: TState | IStore<TState>);
     transform(state: TState, instructions: IterableIterator<IInstruction<TState, any>>) {
         if (this.transformator !== undefined) {
+            const transformer = new Transformer(() => this.getState(state), state);
             instructions = exchangeIterator(
                 instructions,
-                instruction => this.transformator(
-                    instruction,
-                    this.isInstruction(instruction),
-                    () => this.getState(state),
-                    state
-                )
+                instruction => this.transformator(instruction, transformer)
             );
         }
         for (const scope of this.scopes) {
@@ -38,32 +35,4 @@ export abstract class Schema<TState, T> implements ISchema<TState, T> {
             this.scopes.splice(id, 1);
         }
     }
-    protected isInstruction = (instruction: IInstruction<TState, any>) =>
-        (path: IPath<TState, any>, args?: PathArg[], strict?: boolean) => {
-            if (
-                args !== undefined
-                && (
-                    instruction.args === undefined
-                    || args.length > instruction.args.length
-                )
-                || !instruction.path
-            ) {
-                return false;
-            }
-            const isPathEqual = instruction.path.includes(path, strict);
-            if (
-                !isPathEqual
-                || args === undefined
-                || instruction.args === undefined
-                || args.length === 0
-            ) {
-                return isPathEqual;
-            }
-            for (let i = 0; i < args.length; i++) {
-                if (args[i] !== instruction.args[i]) {
-                    return false;
-                }
-            }
-            return true;
-        }
 }

@@ -21,20 +21,22 @@ const reistoreSuite = (iterations, initCounterStore, deepState, initNormalizedSt
         });
         const storeCounter = initStore(initCounterStore);
         bench("counter reducer", function () {
-            storeCounter.beginTransaction();
-            storeCounter.set(counter, v => v + 1);
-            storeCounter.set(counter, v => v - 1);
-            storeCounter.set(counter, v => v + 1);
-            storeCounter.set(counter, v => v - 1);
-            storeCounter.flush();
+            storeCounter.batch(store => {
+                store.set(counter, v => v + 1);
+                store.set(counter, v => v - 1);
+                store.set(counter, v => v + 1);
+                store.set(counter, v => v - 1);
+            });
         });
         const storeInject = initStore(initCounterStore);
         bench("counter reducer with inject", function () {
-            storeInject.inject(({ scope: { counter: value } }, inject) => {
-                inject.set(counter, value - 1);
-                inject.set(counter, value + 1);
-                inject.set(counter, value - 1);
-                inject.set(counter, value + 1);
+            storeInject.batch(store => {
+                store.inject(({ scope: { counter: value } }, inject) => {
+                    inject.set(counter, value - 1);
+                    inject.set(counter, value + 1);
+                    inject.set(counter, value - 1);
+                    inject.set(counter, value + 1);
+                });
             });
         });
         const deepSchema = createSchema({ ...deepState });
@@ -43,23 +45,23 @@ const reistoreSuite = (iterations, initCounterStore, deepState, initNormalizedSt
         const scopeSchema = createScope(deepSchema, f => f.scope0.scope1.scope2.scope3.scope4);
         const counterPath = scopeSchema.joinPath(f => f.counter);
         bench("counter reducer deep", function () {
-            storeDeepCounter.beginTransaction();
-            storeDeepCounter.set(counterPath, v => v + 1);
-            storeDeepCounter.set(counterPath, v => v - 1);
-            storeDeepCounter.set(counterPath, v => v + 1);
-            storeDeepCounter.set(counterPath, v => v - 1);
-            storeDeepCounter.flush();
+            storeDeepCounter.batch(store => {
+                store.set(counterPath, v => v + 1);
+                store.set(counterPath, v => v - 1);
+                store.set(counterPath, v => v + 1);
+                store.set(counterPath, v => v - 1);
+            });
         });
 
-        function* transformer(instruction, is, state) {
-            if (is(newsScope.path)) {
-                if (instruction.type === InstructionType.add) {
-                    yield Instructor.createAdd(showArgPath, instruction.value.id);
-                } else if (instruction.type === InstructionType.remove) {
-                    yield Instructor.createRemove(showScope.path, instruction.index);
+        function* transformer(change, { add, remove }) {
+            if (change.in(newsScope.path)) {
+                if (change.type === InstructionType.add) {
+                    yield add(showArgPath, change.value.id);
+                } else if (change.type === InstructionType.remove) {
+                    yield remove(showScope.path, change.index);
                 }
             }
-            yield instruction;
+            yield change;
         }
         const schemaNormalized = createSchema(initNormalizedState, transformer);
         const newsScope = createScope(schemaNormalized, f => f.news);
@@ -70,14 +72,14 @@ const reistoreSuite = (iterations, initCounterStore, deepState, initNormalizedSt
         const storeNormalized = createStore(schemaNormalized)
             .subscribe(() => { });
         bench("normalized state", function () {
-            storeNormalized.beginTransaction();
-            for (let i = 0; i < normalizedCount; i++) {
-                storeNormalized.add(newsArgPath, { id: i, text: "some news text" + i }, i);
-            }
-            for (let i = normalizedCount - 1; i >= 0; i--) {
-                storeNormalized.remove(newsScope.path, i);
-            }
-            storeNormalized.flush();
+            storeNormalized.batch(store => {
+                for (let i = 0; i < normalizedCount; i++) {
+                    store.add(newsArgPath, { id: i, text: "some news text" + i }, i);
+                }
+                for (let i = normalizedCount - 1; i >= 0; i--) {
+                    store.remove(newsScope.path, i);
+                }
+            });
         });
     });
     suite("reistore mutable", function () {
@@ -99,20 +101,22 @@ const reistoreSuite = (iterations, initCounterStore, deepState, initNormalizedSt
         });
         const storeCounter = initStore(initCounterStore);
         bench("counter reducer", function () {
-            storeCounter.beginTransaction();
-            storeCounter.set(counter, v => v + 1);
-            storeCounter.set(counter, v => v - 1);
-            storeCounter.set(counter, v => v + 1);
-            storeCounter.set(counter, v => v - 1);
-            storeCounter.flush();
+            storeCounter.batch(store => {
+                store.set(counter, v => v + 1);
+                store.set(counter, v => v - 1);
+                store.set(counter, v => v + 1);
+                store.set(counter, v => v - 1);
+            });
         });
         const storeInject = initStore(initCounterStore);
         bench("counter reducer with inject", function () {
-            storeInject.inject(({ scope: { counter: value } }, inject) => {
-                inject.set(counter, value - 1);
-                inject.set(counter, value + 1);
-                inject.set(counter, value - 1);
-                inject.set(counter, value + 1);
+            storeInject.batch(store => {
+                store.inject(({ scope: { counter: value } }, inject) => {
+                    inject.set(counter, value - 1);
+                    inject.set(counter, value + 1);
+                    inject.set(counter, value - 1);
+                    inject.set(counter, value + 1);
+                });
             });
         });
         const deepSchema = createSchema({ ...deepState });
@@ -120,23 +124,23 @@ const reistoreSuite = (iterations, initCounterStore, deepState, initNormalizedSt
             .subscribe(() => { });
         const counterPath = Path.create(f => f.scope0.scope1.scope2.scope3.scope4.counter);
         bench("counter reducer deep", function () {
-            storeDeepCounter.beginTransaction();
-            storeDeepCounter.set(counterPath, v => v + 1);
-            storeDeepCounter.set(counterPath, v => v - 1);
-            storeDeepCounter.set(counterPath, v => v + 1);
-            storeDeepCounter.set(counterPath, v => v - 1);
-            storeDeepCounter.flush();
+            storeDeepCounter.batch(store => {
+                store.set(counterPath, v => v + 1);
+                store.set(counterPath, v => v - 1);
+                store.set(counterPath, v => v + 1);
+                store.set(counterPath, v => v - 1);
+            });
         });
 
-        function* transformer(instruction, is, state) {
-            if (is(newsScope.path)) {
-                if (instruction.type === InstructionType.add) {
-                    yield Instructor.createAdd(showArgPath, instruction.value.id);
-                } else if (instruction.type === InstructionType.remove) {
-                    yield Instructor.createRemove(showScope.path, instruction.index);
+        function* transformer(change, { add, remove }) {
+            if (change.in(newsScope.path)) {
+                if (change.type === InstructionType.add) {
+                    yield add(showArgPath, change.value.id);
+                } else if (change.type === InstructionType.remove) {
+                    yield remove(showScope.path, change.index);
                 }
             }
-            yield instruction;
+            yield change;
         }
         const schemaNormalized = createSchema(initNormalizedState, transformer);
         const newsScope = createScope(schemaNormalized, f => f.news);
@@ -147,14 +151,14 @@ const reistoreSuite = (iterations, initCounterStore, deepState, initNormalizedSt
         const storeNormalized = createStore(schemaNormalized, undefined, undefined, false)
             .subscribe(() => { });
         bench("normalized state", function () {
-            storeNormalized.beginTransaction();
-            for (let i = 0; i < normalizedCount; i++) {
-                storeNormalized.add(newsArgPath, { id: i, text: "some news text" + i }, i);
-            }
-            for (let i = normalizedCount - 1; i >= 0; i--) {
-                storeNormalized.remove(newsScope.path, i);
-            }
-            storeNormalized.flush();
+            storeNormalized.batch(store => {
+                for (let i = 0; i < normalizedCount; i++) {
+                    store.add(newsArgPath, { id: i, text: "some news text" + i }, i);
+                }
+                for (let i = normalizedCount - 1; i >= 0; i--) {
+                    store.remove(newsScope.path, i);
+                }
+            });
         });
     });
 };

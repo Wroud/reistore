@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import "mocha";
 
-import { Path, createStore, createSchema, createScope, Instructor } from "../src/";
+import { Path, createStore, createSchema, createScope, Instructor, IInstruction, ITransformer } from "../src/";
 
 describe("Transform", () => {
     interface IArray {
@@ -20,21 +20,30 @@ describe("Transform", () => {
     }
 
     it("two transformers with scope", () => {
-        function* transformer(instruction, is, state) {
-            if (is(scopeValue) && instruction.value !== undefined) {
-                yield Instructor.createSet(stateValue, instruction.value.toString());
+        function* transformer(
+            instruction: IInstruction<IModel, any>,
+            transformer: ITransformer<IModel, IModel>
+        ) {
+            if (instruction.in(scopeValue) && instruction.value !== undefined) {
+                yield transformer.set(stateValue, instruction.value.toString());
             }
             yield instruction;
         }
+
         const schema = createSchema<IModel>({} as IModel, transformer);
         const scopeValue = Path.create<IModel, number>(f => f.scope.value);
         const stateValue = Path.create<IModel, string>(f => f.value);
-        function* scopeTransformer(instruction, is, state) {
-            if (is(Path.create(f => f.value)) && instruction.value !== undefined) {
-                yield Instructor.createSet(Path.create(f => f.scope.value), parseInt(instruction.value));
+
+        function* scopeTransformer(
+            instruction: IInstruction<IModel, any>,
+            transformer: ITransformer<IModel, IModel["scope"]>
+        ) {
+            if (instruction.in(Path.create(f => f.value)) && instruction.value !== undefined) {
+                yield transformer.set(Path.create(f => f.scope.value), parseInt(instruction.value));
             }
             yield instruction;
         }
+
         const scope = createScope(schema, f => f.scope, {}, scopeTransformer);
         const store = createStore<IModel>(schema);
         const expectedState = {

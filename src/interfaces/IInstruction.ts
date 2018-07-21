@@ -2,6 +2,7 @@ import { InstructionType } from "../enums/InstructionType";
 import { IPath, PathArg } from "./IPath";
 import { Injection } from "./IInstructor";
 
+export type IsInstructionInPath<TState> = (selector: IPath<TState, any>, args?: PathArg[], strict?: boolean) => boolean;
 export type InstructionValue<T> = T | ((value: T) => T);
 
 export interface IInstruction<TState, TValue> {
@@ -11,4 +12,5 @@ export interface IInstruction<TState, TValue> {
     type: InstructionType;
     value?: InstructionValue<TValue>;
     injection?: Injection<TState>;
+    in: IsInstructionInPath<TState>;
 }

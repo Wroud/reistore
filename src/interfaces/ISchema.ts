@@ -1,10 +1,9 @@
 import { IInstruction } from "./IInstruction";
-import { IPath, PathArg } from "./IPath";
 import { IStore } from "./IStore";
+import { ITransformer } from "./ITransformator";
 
 export type ValueSelector<TState, TValue> = (state: TState) => TValue;
-export type IsInstruction<TState> = <TValue>(selector: IPath<TState, TValue>, args?: PathArg[], strict?: boolean) => boolean;
-export type Transformator<TState, T> = (instruction: IInstruction<TState, any>, is: IsInstruction<TState>, state: () => T, storeState: TState) => IterableIterator<IInstruction<TState, any>>;
+export type Transformator<TState, TScope> = (instruction: IInstruction<TState, any>, transformer: ITransformer<TState, TScope>) => IterableIterator<IInstruction<TState, any>>;
 
 export interface ISchema<TState, TParent> {
     setInitState(store: IStore<TState>);

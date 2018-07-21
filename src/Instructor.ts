@@ -4,6 +4,7 @@ import { IStore } from "./interfaces/IStore";
 import { IndexSearch, ValueMap, Injection, Batch, IInject, IBatch } from "./interfaces/IInstructor";
 import { PathArg } from "./interfaces/IPath";
 import { InstructionValue } from "./interfaces/IInstruction";
+import { Instruction } from "./Instruction";
 
 export type InstructorBashInject<TState> = IInject<TState> & IBatch<TState>;
 
@@ -32,9 +33,9 @@ export class Instructor<TState> implements InstructorBashInject<TState> {
         ...pathArgs: PathArg[]
     ) {
         if (this.isBatch) {
-            this.batchInstructions.push(Instructor.createSet(path, value, ...pathArgs));
+            this.batchInstructions.push(Instructor.createSet(path, value, pathArgs));
         } else {
-            this.store.update([Instructor.createSet(path, value, ...pathArgs)][Symbol.iterator]());
+            this.store.update([Instructor.createSet(path, value, pathArgs)][Symbol.iterator]());
         }
     }
     add<TValue>(
@@ -43,9 +44,9 @@ export class Instructor<TState> implements InstructorBashInject<TState> {
         ...pathArgs: PathArg[]
     ) {
         if (this.isBatch) {
-            this.batchInstructions.push(Instructor.createAdd(path, value, ...pathArgs));
+            this.batchInstructions.push(Instructor.createAdd(path, value, pathArgs));
         } else {
-            this.store.update([Instructor.createAdd(path, value, ...pathArgs)][Symbol.iterator]());
+            this.store.update([Instructor.createAdd(path, value, pathArgs)][Symbol.iterator]());
         }
     }
     remove<TValue>(
@@ -54,9 +55,9 @@ export class Instructor<TState> implements InstructorBashInject<TState> {
         ...pathArgs: PathArg[]
     ) {
         if (this.isBatch) {
-            this.batchInstructions.push(Instructor.createRemove(path, index, ...pathArgs));
+            this.batchInstructions.push(Instructor.createRemove(path, index, pathArgs));
         } else {
-            this.store.update([Instructor.createRemove(path, index, ...pathArgs)][Symbol.iterator]());
+            this.store.update([Instructor.createRemove(path, index, pathArgs)][Symbol.iterator]());
         }
     }
     private beginTransaction() {
@@ -75,27 +76,51 @@ export class Instructor<TState> implements InstructorBashInject<TState> {
         this.store.update(this.batchInstructions[Symbol.iterator]());
     }
     static createInject<TState>(injection: Injection<TState>) {
-        return { type: InstructionType.inject, injection };
+        return new Instruction(
+            InstructionType.inject,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            injection
+        );
     }
     static createSet<TState, TValue>(
         path: IPath<TState, TValue>,
         value: InstructionValue<TValue>,
-        ...pathArgs: PathArg[]
+        pathArgs: PathArg[]
     ) {
-        return { path, args: pathArgs, value, type: InstructionType.set };
+        return new Instruction(
+            InstructionType.set,
+            path as IPath<TState, TValue | TValue[]>,
+            undefined,
+            pathArgs,
+            value
+        );
     }
     static createAdd<TState, TValue>(
         path: IPath<TState, ValueMap<TValue> | TValue | TValue[]>,
         value: InstructionValue<TValue>,
-        ...pathArgs: PathArg[]
+        pathArgs: PathArg[]
     ) {
-        return { path, args: pathArgs, value, type: InstructionType.add };
+        return new Instruction(
+            InstructionType.add, 
+            path as IPath<TState, TValue | TValue[]>, 
+            undefined, 
+            pathArgs, 
+            value
+        );
     }
     static createRemove<TState, TValue>(
         path: IPath<TState, ValueMap<TValue> | TValue[]>,
         index: string | number | IndexSearch<TValue>,
-        ...pathArgs: PathArg[]
+        pathArgs: PathArg[]
     ) {
-        return { path, args: pathArgs, index, type: InstructionType.remove };
+        return new Instruction(
+            InstructionType.remove, 
+            path as IPath<TState, TValue | TValue[]>, 
+            index, 
+            pathArgs
+        );
     }
 }

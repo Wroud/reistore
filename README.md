@@ -65,13 +65,13 @@ const store = createStore(undefined, initState);
 const counter = Path.create(f => f.counter);
 
 store.batch(instructor => {
-store.set(counter, 1);
+  store.set(counter, 1);
   instructor.set(counter, 2);
 
-console.log(store.state.counter);
-// value = 0
+  console.log(store.state.counter);
+  // value = 0
 
-store.set(counter, 3);
+  store.set(counter, 3);
 });
 
 console.log(store.state.counter);
@@ -94,13 +94,13 @@ const counter = Path.create(f => f.counter);
 store.batch(instructor => {
   instructor.set(counter, 1);
   instructor.inject((state, instructor) => {
-  console.log(state.counter);
-  // value = 1
-  instructor.set(counter, state.counter + 1);
-});
+    console.log(state.counter);
+    // value = 1
+    instructor.set(counter, state.counter + 1);
+  });
 
-console.log(store.state.counter);
-// value = 0
+  console.log(store.state.counter);
+  // value = 0
 
   instructor.set(counter, v => v + 3);
 });
@@ -125,15 +125,15 @@ const path = {
   min: Path.create(f => f.min),
   max: Path.create(f => f.max)
 }
-function* transformer(instruction, is, getState) {
-  yield instruction;
-  if (is(path.min) && getState().min > getState().max) {
-    yield Instructor.createSet(path.max, instruction.value);
-  } else if (is(path.max) && getState().max < getState().min) {
-    yield Instructor.createSet(path.min, instruction.value);
+function* transformator(change, {state, set}) {
+  yield change; // apply change to state
+  if (state.min > state.max) {
+    yield set(path.max, change.value); // apply change to max if min > max
+  } else if (state.max < state.min) {
+    yield set(path.min, change.value); // apply change to max if max < min
   }
 }
-const store = createStore(undefined, initState, transformer);
+const store = createStore(undefined, initState, transformator);
 
 store.set(path.min, 1);
 console.log(store.state);
@@ -167,16 +167,16 @@ const scopeInitState = {
 }
 const schema = createSchema(initState);
 
-function* transformer(instruction, is, getState, storeState) {
-  if (is(path.min) && instruction.value > getState().max) {
-    yield Instructor.createSet(path.max, instruction.value);
-  } else if (is(path.max) && instruction.value < getState().min) {
-    yield Instructor.createSet(path.min, instruction.value);
+function* transformator(change, {state, set, scope}) {
+  if (change.in(path.min) && change.value > scope().max) { // if changed min and new value(min) > state.scope.max 
+    yield set(path.max, change.value);
+  } else if (change.in(path.max) && change.value < scope().min) { // if changed max and new value(max) < state.scope.min
+    yield set(path.min, change.value);
   }
-  yield instruction;
-  yield Instructor.createSet(path.sum, storeState.scope.max + storeState.scope.min);
+  yield change; // apply change to state
+  yield set(path.sum, state.scope.max + state.scope.min); // update sum
 }
-const scope = createScope(schema, f => f.scope, scopeInitState, transformer);
+const scope = createScope(schema, f => f.scope, scopeInitState, transformator);
 const path = {
   sum: Path.create(f => f.sum),
   min: scope.joinPath(f => f.min),
