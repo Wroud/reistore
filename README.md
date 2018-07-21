@@ -113,8 +113,7 @@ console.log(store.state.counter);
 import {
   createStore,
   createSchema,
-  Path,
-  Instructor
+  Path
 } from "reistore";
 
 const initState = {
@@ -154,8 +153,7 @@ import {
   createStore,
   createSchema,
   createScope,
-  Path,
-  Instructor
+  Path
 } from "reistore";
 
 const initState = {
