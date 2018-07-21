@@ -82,9 +82,7 @@ describe("Store", () => {
         }
         const path = Path.create((f: IModel) => f.scope.array["{}"]);
         const number = path.join(f => f.number);
-        console.log(store.state);
         store.set(number, 6, 0);
-        console.log(store.state);
         expect(store.state.scope.array[0].number).to.be.equal(6);
         expect(store.state).to.be.deep.equal(expectedState);
     });
@@ -185,15 +183,45 @@ describe("Store", () => {
             }
         }
         const arrayPath = Path.create((f: IModel) => f.scope.array["{}"]);
-        store.add(arrayPath, 1 as any);
-        store.add(arrayPath, 2 as any);
-        store.add(arrayPath, 3 as any);
-        store.inject((state, inject) => {
-            inject.set(arrayPath, 15 as any, 0);
-            inject.set(arrayPath, v => (v === 3 as any) as any, 2);
+        store.batch(store => {
+            store.add(arrayPath, 1 as any);
+            store.add(arrayPath, 2 as any);
+            store.add(arrayPath, 3 as any);
+            store.inject((state, inject) => {
+                inject.set(arrayPath, 15 as any, 0);
+                inject.set(arrayPath, v => (v === 3 as any) as any, 2);
+            });
         });
         expect(store.state.scope.array[0]).to.be.equal(15);
         expect(store.state.scope.array[1]).to.be.equal(2);
+        expect(store.state.scope.array[2]).to.be.equal(true);
+        expect(store.state).to.be.deep.equal(expectedState);
+    });
+
+    it("inject deep tests", () => {
+        const store = createStore<IModel>(undefined, { scope: { array: [] } } as any);
+        const expectedState = {
+            scope: {
+                array: [15, 4, true]
+            }
+        }
+        const arrayPath = Path.create((f: IModel) => f.scope.array["{}" as any as number]);
+        store.batch(store => {
+            store.add(arrayPath, 1 as any);
+            store.add(arrayPath, 2 as any);
+            store.add(arrayPath, 3 as any);
+            store.inject((state, inject) => {
+                inject.batch(store => {
+                    store.set(arrayPath, v => (v === 3 as any) as any, 2);
+                    store.inject((state, inject) => {
+                        inject.set(arrayPath, 4 as any, 1);
+                    });
+                });
+                inject.set(arrayPath, 15 as any, 0);
+            });
+        });
+        expect(store.state.scope.array[0]).to.be.equal(15);
+        expect(store.state.scope.array[1]).to.be.equal(4);
         expect(store.state.scope.array[2]).to.be.equal(true);
         expect(store.state).to.be.deep.equal(expectedState);
     });

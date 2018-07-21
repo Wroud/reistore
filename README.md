@@ -49,9 +49,9 @@ store.set(counter, 1);
 const value = store.state.counter;
 // value = 1
 ```
-### Transaction API
-You also can use transaction api for executing series of commands, transaction can be undone.
-Transaction always faster when you need execute more then one command.
+### Batch API
+You also can use batch api for executing series of commands.
+Batch always faster when you need execute more then one command.
 ```js
 import {
   createStore,
@@ -64,30 +64,21 @@ const initState = {
 const store = createStore(undefined, initState);
 const counter = Path.create(f => f.counter);
 
-store.beginTransaction();
+store.batch(instructor => {
 store.set(counter, 1);
-store.set(counter, 2);
+  instructor.set(counter, 2);
 
 console.log(store.state.counter);
 // value = 0
 
 store.set(counter, 3);
-store.flush();
-
-console.log(store.state.counter);
-// value = 3
-
-store.beginTransaction();
-store.set(counter, 1);
-store.set(counter, 2);
-store.set(counter, 3);
-store.undoTransaction();
+});
 
 console.log(store.state.counter);
 // value = 3
 ```
 ### Injection API
-You also can use injection API that give you access to state in transaction and access to store modification.
+You also can use injection API that give you access to state in batch and access to store modification.
 ```js
 import {
   createStore,
@@ -100,9 +91,9 @@ const initState = {
 const store = createStore(undefined, initState);
 const counter = Path.create(f => f.counter);
 
-store.beginTransaction();
-store.set(counter, 1);
-store.inject((state, instructor) => {
+store.batch(instructor => {
+  instructor.set(counter, 1);
+  instructor.inject((state, instructor) => {
   console.log(state.counter);
   // value = 1
   instructor.set(counter, state.counter + 1);
@@ -111,8 +102,8 @@ store.inject((state, instructor) => {
 console.log(store.state.counter);
 // value = 0
 
-store.set(counter, v => v + 3);
-store.flush();
+  instructor.set(counter, v => v + 3);
+});
 
 console.log(store.state.counter);
 // value = 5

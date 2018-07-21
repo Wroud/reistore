@@ -1,23 +1,23 @@
 import { InstructionType } from "./enums/InstructionType";
 import { Instructor } from "./Instructor";
-import { IInstruction, IInstructor, IUpdateHandler, IPath, Handler } from "./interfaces";
+import { IInstruction, IUpdateHandler, IPath, Handler } from "./interfaces";
 import { UpdateHandler } from "./UpdateHandler";
-import { IStore } from "./interfaces/IStore";
+import { IStoreInstructor } from "./interfaces/IStore";
 import { StoreSchema } from "./StoreSchema";
-import { IndexSearch, ValueMap, Injection } from "./interfaces/IInstructor";
+import { IndexSearch, ValueMap, Batch, IBatch } from "./interfaces/IInstructor";
 import { PathArg } from "./interfaces/IPath";
 import { ISchema, Transformator } from "./interfaces/ISchema";
 import { InstructionValue } from "./interfaces/IInstruction";
 
-export type IStoreInstructor<TState> = IStore<TState> & IInstructor<TState>;
-
 export class Store<TState> implements IStoreInstructor<TState> {
-    instructor: IInstructor<TState>;
+    instructor: IBatch<TState>;
     updateHandler: IUpdateHandler<TState>;
     schema: ISchema<TState, TState>;
     private stateStore!: TState;
+    private updateList!: IPath<TState, any>[];
     private isUpdating: boolean;
     private isImmutable: boolean;
+    private isInjecting: boolean;
     constructor(
         schema?: ISchema<TState, TState>,
         initState?: TState,
@@ -31,6 +31,7 @@ export class Store<TState> implements IStoreInstructor<TState> {
             this.stateStore = { ...initState as any };
         }
         this.isImmutable = isImmutable;
+        this.isInjecting = false;
         this.isUpdating = false;
         this.schema = schema;
         this.instructor = new Instructor(this);
@@ -43,20 +44,8 @@ export class Store<TState> implements IStoreInstructor<TState> {
     set state(value: TState) {
         this.stateStore = value;
     }
-    getTransaction() {
-        return this.instructor.getTransaction();
-    }
-    beginTransaction() {
-        this.instructor.beginTransaction();
-    }
-    flush() {
-        this.instructor.flush();
-    }
-    undoTransaction() {
-        this.instructor.undoTransaction();
-    }
-    inject(injection: Injection<TState>) {
-        this.instructor.inject(injection);
+    batch(batch: Batch<TState>) {
+        this.instructor.batch(batch);
     }
     get<TValue>(
         path: IPath<TState, TValue>,
@@ -86,6 +75,10 @@ export class Store<TState> implements IStoreInstructor<TState> {
         this.instructor.remove(path, index, ...pathArgs);
     }
     update(instructions: IterableIterator<IInstruction<TState, any>>) {
+        if (this.isInjecting) {
+            this.transformState(instructions);
+            return;
+        }
         if (this.isUpdating) {
             console.group("Reistate:Store");
             console.error("Trying to run update before last update finished, asynchronous problem?");
@@ -97,27 +90,31 @@ export class Store<TState> implements IStoreInstructor<TState> {
         if (this.isImmutable) {
             this.stateStore = { ...this.stateStore as any };
         }
-        const updateList = this.transformState(instructions);
-        this.updateHandler.update(this.stateStore, updateList);
+        this.updateList = [];
+        this.transformState(instructions);
+        this.updateHandler.update(this.stateStore, this.updateList);
         this.isUpdating = false;
     }
     private transformState(instructions: IterableIterator<IInstruction<TState, any>>) {
         instructions = this.schema.transform(this.stateStore, instructions);
-        const updateList: IPath<TState, any>[] = [];
         for (const { type, path, value, index, args, injection } of instructions) {
             switch (type) {
                 case InstructionType.inject:
-                    if (injection) {
-                        const inject = new Instructor(this);
-                        inject.beginTransaction();
-                        injection(this.stateStore, inject);
-                        updateList.push(...this.transformState(inject.getTransaction()[Symbol.iterator]()));
+                    if (!injection) {
+                        break;
+                    }
+                    if (this.isInjecting) {
+                        injection(this.stateStore, this);
+                    } else {
+                        this.isInjecting = true;
+                        injection(this.stateStore, this);
+                        this.isInjecting = false;
                     }
                     break;
                 case InstructionType.set:
                 case InstructionType.add:
                     if (path) {
-                        updateList.push(path);
+                        this.updateList.push(path);
                         if (this.isImmutable) {
                             path.setImmutable(this.stateStore, value, args);
                         } else {
@@ -131,7 +128,7 @@ export class Store<TState> implements IStoreInstructor<TState> {
                         break;
                     }
                     if (path) {
-                        updateList.push(path);
+                        this.updateList.push(path);
                         if (this.isImmutable) {
                             path.setImmutable(this.stateStore, curValue => {
                                 if (!Array.isArray(curValue)) {
@@ -165,7 +162,6 @@ export class Store<TState> implements IStoreInstructor<TState> {
                     break;
             }
         }
-        return updateList;
     }
     subscribe(handler: Handler<TState>) {
         this.updateHandler.subscribe(handler);
