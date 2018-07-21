@@ -7,13 +7,15 @@ export declare type ValueMap<TValue> = {
 } | {
     [key: number]: TValue;
 };
-export declare type Injection<TState> = (state: TState, instructor: IInstructor<TState>) => any;
-export interface IInstructor<TState> {
-    getTransaction(): any;
-    beginTransaction(): any;
-    flush(): any;
-    undoTransaction(): any;
+export declare type Injection<TState> = (state: TState, instructor: IBatch<TState>) => any;
+export declare type Batch<TState> = (store: IInject<TState>) => void;
+export interface IBatch<TState> extends IInstructor<TState> {
+    batch(batch: Batch<TState>): any;
+}
+export interface IInject<TState> extends IInstructor<TState> {
     inject(injection: Injection<TState>): any;
+}
+export interface IInstructor<TState> {
     set<TValue>(path: IPath<TState, TValue>, value: InstructionValue<TValue>, ...pathArgs: PathArg[]): any;
     add<TValue>(path: IPath<TState, ValueMap<TValue> | TValue | TValue[]>, value: InstructionValue<TValue>, ...pathArgs: PathArg[]): any;
     remove<TValue>(path: IPath<TState, ValueMap<TValue> | TValue[]>, index: string | number | IndexSearch<TValue>, ...pathArgs: PathArg[]): any;

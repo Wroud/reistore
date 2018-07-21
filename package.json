@@ -1,6 +1,6 @@
 {
   "name": "reistore",
-  "version": "1.1.8",
+  "version": "1.2.0",
   "description": "Functional state manager for immutable state with relationships",
   "main": "lib/index.js",
   "module": "lib/index.js",
