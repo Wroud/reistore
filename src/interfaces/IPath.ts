@@ -14,6 +14,7 @@ export interface IPathInstruction {
     isEnd?: boolean;
 }
 export interface IPathSelector<TModel, TValue> {
+    path: string;
     selector: PathSelector<TModel, TValue>;
     instructions: IPathInstruction[];
     type: SelectorType;
@@ -22,7 +23,7 @@ export interface IPathSelector<TModel, TValue> {
 }
 
 export interface IPath<TModel, TValue> {
-    getPath(): string;
+    getPath(args?: PathArg[]): string;
     getSelector(): PathSelector<TModel, TValue>;
     getSelectors(): IPathSelector<any, any>[];
     toMutable(): IPath<TModel, TValue>;

@@ -23,32 +23,33 @@ export class Instruction<TState, TValue> implements IInstruction<TState, TValue>
         this.value = value;
         this.injection = injection;
     }
-    in(path: IPath<TState, any>, args?: PathArg[], strict?: boolean) {
-        if (
-            args !== undefined
-            && (
-                this.args === undefined
-                || args.length > this.args.length
-            )
-            || !this.path
-        ) {
+    in(path: IPath<TState, any>, strict?: boolean, ...args: PathArg[]) {
+        if (!this.path) {
             return false;
         }
-        const isPathEqual = this.path.includes(path, strict);
-        if (
-            !isPathEqual
-            || args === undefined
-            || this.args === undefined
-            || args.length === 0
-        ) {
-            return isPathEqual;
+        if ((!this.args || this.args.length === 0) && args.length === 0) {
+            return this.path === path || this.path.includes(path, strict);
         }
-        for (let i = 0; i < args.length; i++) {
-            if (args[i] !== this.args[i]) {
+        if (!this.args || args.length > this.args.length) {
+            return false;
+        }
+        if (this.path === path) {
+            if (this.args.length !== args.length) {
                 return false;
             }
+            for (let i = 0; i < this.args.length; i++) {
+                if (this.args[i] !== args[i]) {
+                    return false;
+                }
+            }
+            return true;
         }
-        return true;
+        const instructionPathWithArgs = this.path.getPath(this.args);
+        const pathWithArgs = path.getPath(args);
+
+        return strict
+            ? instructionPathWithArgs === pathWithArgs
+            : instructionPathWithArgs.startsWith(pathWithArgs);
     }
 
 }

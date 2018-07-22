@@ -3,7 +3,7 @@ import { ValueMap, IndexSearch } from "./IInstructor";
 import { InstructionValue, IInstruction } from "./IInstruction";
 
 export interface ITransformer<TState, TScope> {
-    scope: () => TScope;
+    scope: TScope;
     state: TState;
 
     set<TValue>(

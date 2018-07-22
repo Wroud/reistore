@@ -2,10 +2,13 @@ import { ITransformer, IPath, InstructionValue, PathArg, ValueMap, IndexSearch }
 import { Instructor } from "./Instructor";
 
 export class Transformer<TState, TScope> implements ITransformer<TState, TScope>{
-    scope: () => TScope;
+    get scope(): TScope {
+        return this.scopeSelector();
+    }
     state: TState;
+    private scopeSelector: () => TScope;
     constructor(scope: () => TScope, state: TState) {
-        this.scope = scope;
+        this.scopeSelector = scope;
         this.state = state;
     }
 

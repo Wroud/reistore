@@ -1,7 +1,6 @@
 import { createStore, createSchema, createScope, Path, InstructionType } from "../../src";
 
-export const reistoreSuite = ({ variables: { normalizedCount }, initState, helpers: { createHeavySubscriber } }) => {
-
+export const reistoreSuite = ({ variables: { normalizedCount }, initState, helpers: { subscribeChecker } }) => {
     const initStore = (state) => {
         return createStore(createSchema({ ...state }))
             .subscribe(() => { });
@@ -11,79 +10,79 @@ export const reistoreSuite = ({ variables: { normalizedCount }, initState, helpe
         after() {
         },
         benchmarks: [
-            {
-                name: "create",
-                bench() {
-                    const schema = createSchema({});
-                    return () => {
-                        const store = createStore(schema)
-                            .subscribe(() => { });
-                        Path.create<any, any>(f => f.scope);
-                    }
-                }
-            },
-            {
-                name: "modify",
-                bench() {
-                    const counter = Path.create<any, any>(f => f.scope.counter);
-                    const store = initStore(initState.counter);
-                    return () => {
-                        store.set(counter, 1);
-                    }
-                }
-            },
-            {
-                name: "counter",
-                bench() {
-                    const counter = Path.create<any, any>(f => f.scope.counter);
-                    const store = initStore(initState.counter);
-                    return () => {
-                        store.batch(store => {
-                            store.set(counter, v => v + 1);
-                            store.set(counter, v => v - 1);
-                            store.set(counter, v => v + 1);
-                            store.set(counter, v => v - 1);
-                        });
-                    };
-                }
-            },
-            {
-                name: "counter with inject",
-                bench() {
-                    const counter = Path.create<any, any>(f => f.scope.counter);
-                    const store = initStore(initState.counter);
-                    return () => {
-                        store.batch(store => {
-                            store.inject(({ scope: { counter: value } }, inject) => {
-                                inject.set(counter, value - 1);
-                                inject.set(counter, value + 1);
-                                inject.set(counter, value - 1);
-                                inject.set(counter, value + 1);
-                            });
-                        });
-                    };
-                }
-            },
-            {
-                name: "counter deep",
-                bench() {
-                    const deepSchema = createSchema({ ...initState.deepCounter });
-                    const scopeSchema = createScope(deepSchema, f => f.scope0.scope1.scope2.scope3.scope4);
+            // {
+            //     name: "create",
+            //     bench() {
+            //         const schema = createSchema({});
+            //         return () => {
+            //             const store = createStore(schema)
+            //                 .subscribe(() => { });
+            //             Path.create<any, any>(f => f.scope);
+            //         }
+            //     }
+            // },
+            // {
+            //     name: "modify",
+            //     bench() {
+            //         const counter = Path.create<any, any>(f => f.scope.counter);
+            //         const store = initStore(initState.counter());
+            //         return () => {
+            //             store.set(counter, 1);
+            //         }
+            //     }
+            // },
+            // {
+            //     name: "counter",
+            //     bench() {
+            //         const counter = Path.create<any, any>(f => f.scope.counter);
+            //         const store = initStore(initState.counter());
+            //         return () => {
+            //             store.batch(store => {
+            //                 store.set(counter, v => v + 1);
+            //                 store.set(counter, v => v - 1);
+            //                 store.set(counter, v => v + 1);
+            //                 store.set(counter, v => v - 1);
+            //             });
+            //         };
+            //     }
+            // },
+            // {
+            //     name: "counter with inject",
+            //     bench() {
+            //         const counter = Path.create<any, any>(f => f.scope.counter);
+            //         const store = initStore(initState.counter());
+            //         return () => {
+            //             store.batch(store => {
+            //                 store.inject(({ scope: { counter: value } }, inject) => {
+            //                     inject.set(counter, value - 1);
+            //                     inject.set(counter, value + 1);
+            //                     inject.set(counter, value - 1);
+            //                     inject.set(counter, value + 1);
+            //                 });
+            //             });
+            //         };
+            //     }
+            // },
+            // {
+            //     name: "counter deep",
+            //     bench() {
+            //         const deepSchema = createSchema(initState.deepCounter());
+            //         const scopeSchema = createScope(deepSchema, f => f.scope0.scope1.scope2.scope3.scope4);
 
-                    const counter = scopeSchema.joinPath(f => f.counter);
-                    const store = createStore(deepSchema)
-                        .subscribe(() => { });
+            //         const counter = scopeSchema.joinPath(f => f.counter);
+            //         const store = createStore(deepSchema)
+            //             .subscribe(() => { });
 
-                    return () => {
-                        store.batch(store => {
-                            store.set(counter, v => v + 1);
-                            store.set(counter, v => v - 1);
-                            store.set(counter, v => v + 1);
-                            store.set(counter, v => v - 1);
-                        });
-                    };
-                }
-            },
+            //         return () => {
+            //             store.batch(store => {
+            //                 store.set(counter, v => v + 1);
+            //                 store.set(counter, v => v - 1);
+            //                 store.set(counter, v => v + 1);
+            //                 store.set(counter, v => v - 1);
+            //             });
+            //         };
+            //     }
+            // },
             {
                 name: "normalized",
                 bench() {
@@ -97,7 +96,7 @@ export const reistoreSuite = ({ variables: { normalizedCount }, initState, helpe
                         }
                         yield change;
                     }
-                    const schemaNormalized = createSchema(initState.normalized, transformer);
+                    const schemaNormalized = createSchema(initState.normalized(), transformer);
                     const newsScope = createScope(schemaNormalized, (f: any) => f.news);
                     const showScope = createScope(schemaNormalized, (f: any) => f.show);
                     const newsArgPath = newsScope.joinPath(f => f["{}"]);
@@ -118,45 +117,65 @@ export const reistoreSuite = ({ variables: { normalizedCount }, initState, helpe
                 }
             },
             {
-                name: "normalized with subscribers",
+                name: "normalized modify",
                 bench() {
-
-                    function* transformer(change, { add, remove }) {
-                        if ((change.type === InstructionType.add
-                            || change.type === InstructionType.remove)
-                            && change.in(newsScope.path)) {
-                            if (change.type === InstructionType.add) {
-                                yield add(showArgPath, change.value.id);
-                            } else if (change.type === InstructionType.remove) {
-                                yield remove(showScope.path, change.index);
-                            }
-                        }
-                        yield change;
-                    }
-                    const schemaNormalized = createSchema(initState.normalized, transformer);
+                    const schemaNormalized = createSchema(initState.normalized());
                     const newsScope = createScope(schemaNormalized, (f: any) => f.news);
-                    const showScope = createScope(schemaNormalized, (f: any) => f.show);
                     const newsArgPath = newsScope.joinPath(f => f["{}"]);
                     const textPathreal = newsArgPath.join(f => f.text);
-                    const showArgPath = showScope.joinPath(f => f["{}"]);
-                    const store = createStore(schemaNormalized)
-                        .subscribe(() => { });
 
-                    const { heavySubscriber } = createHeavySubscriber();
+                    const store = createStore(schemaNormalized);
+
                     store.batch(batch => {
                         for (let i = 0; i < normalizedCount; i++) {
                             batch.add(newsArgPath, { id: i, text: "some news text" + i }, i);
-                            const hi = [i];
+                        }
+                    });
+                    let invokeCount = 0;
+                    return () => {
+                        for (let i = 0; i < normalizedCount; i++) {
+                            store.set(textPathreal, Math.random().toString(), i);
+                        }
+                        invokeCount += normalizedCount;
+                    };
+                }
+            },
+            {
+                name: "normalized modify with subscribers",
+                bench() {
+                    const schemaNormalized = createSchema(initState.normalized());
+                    const newsScope = createScope(schemaNormalized, (f: any) => f.news);
+                    const newsArgPath = newsScope.joinPath(f => f["{}"]);
+                    const textPathreal = newsArgPath.join(f => f.text);
+                    const store = createStore(schemaNormalized);
+
+                    const { subscriber, getCalls } = subscribeChecker();
+                    store.batch(batch => {
+                        for (let i = 0; i < normalizedCount; i++) {
+                            batch.add(newsArgPath, { id: i, text: "some news text" + i }, i);
                             store.subscribe((state, changes) => {
-                                if (changes.some(path => path.in(textPathreal, hi))) {
-                                    heavySubscriber();
+                                const isChanged = changes.length === 1
+                                    ? changes[0].in(textPathreal, false, i)
+                                    : changes.some(change => change.in(textPathreal, false, i));
+                                if (isChanged) {
+                                    subscriber();
                                 }
                             });
                         }
                     });
-                    return () => {
-                        for (let i = 0; i < normalizedCount; i++) {
-                            store.set(textPathreal, Math.random().toString(), i);
+                    let invokeCount = 0;
+                    return {
+                        bench: () => {
+                            for (let i = 0; i < normalizedCount; i++) {
+                                store.set(textPathreal, Math.random().toString(), i);
+                            }
+                            invokeCount += normalizedCount;
+                        },
+                        onComplete: () => {
+                            console.log(getCalls(), invokeCount);
+                            if (getCalls() < invokeCount) {
+                                throw new Error(`subscriber called: ${getCalls()}/${invokeCount}`);
+                            }
                         }
                     };
                 }

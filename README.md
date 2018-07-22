@@ -39,7 +39,7 @@ const store = createStore(undefined, initState);
 const counter = Path.create(f => f.counter);
 
 store.subscibe((state, changes) => {
-  if(changes.some(path => path.includes(counter))) {
+  if(changes.some(change => change.in(counter))) { // check is counter value changed
     console.log("Counter value: ", state.counter);
   }
 });
@@ -74,7 +74,7 @@ store.batch(instructor => {
   store.set(counter, 3);
 });
 
-console.log(store.state.counter);
+console.log(store.get(counter)); // same as store.state.counter
 // value = 3
 ```
 ### Injection API
@@ -105,7 +105,7 @@ store.batch(instructor => {
   instructor.set(counter, v => v + 3);
 });
 
-console.log(store.state.counter);
+console.log(store.get(counter));
 // value = 5
 ```
 ### Min-Max transform
@@ -124,7 +124,7 @@ const path = {
   min: Path.create(f => f.min),
   max: Path.create(f => f.max)
 }
-function* transformator(change, {state, set}) {
+function* transformator(change, { state, set }) {
   yield change; // apply change to state
   if (state.min > state.max) {
     yield set(path.max, change.value); // apply change to max if min > max
@@ -166,9 +166,9 @@ const scopeInitState = {
 const schema = createSchema(initState);
 
 function* transformator(change, {state, set, scope}) {
-  if (change.in(path.min) && change.value > scope().max) { // if changed min and new value(min) > state.scope.max 
+  if (change.in(path.min) && change.value > scope.max) { // if changed min and new value(min) > state.scope.max 
     yield set(path.max, change.value);
-  } else if (change.in(path.max) && change.value < scope().min) { // if changed max and new value(max) < state.scope.min
+  } else if (change.in(path.max) && change.value < scope.min) { // if changed max and new value(max) < state.scope.min
     yield set(path.min, change.value);
   }
   yield change; // apply change to state
@@ -183,7 +183,7 @@ const path = {
 const store = createStore(schema);
 
 store.set(path.min, 1);
-console.log(scope.getState(store));
+console.log(store.get(scope));
 // { min: 1, max: 1 }
 console.log(store.state);
 // { sum: 2, scope: { min: 1, max: 1 } }

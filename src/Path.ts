@@ -1,4 +1,4 @@
-import { isArray, isNumber } from "util";
+import { isArray, isNumber, isString } from "util";
 import { IPath, PathSelector, IPathInstruction, PathArg, PathValue, IPathSelector, SelectorType } from "./interfaces/IPath";
 
 export class Path<TModel, TValue> implements IPath<TModel, TValue> {
@@ -9,6 +9,7 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
     static root<TModel>() {
         return new Path<TModel, TModel>(
             [{
+                path: "",
                 selector: f => f,
                 instructions: [],
                 type: SelectorType.safe,
@@ -32,8 +33,22 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
             this.path
         );
     }
-    getPath() {
-        return this.path;
+    getPath(args?: PathArg[]) {
+        if (!args || args.length === 0) {
+            return this.path;
+        }
+        let i = 0;
+        const getArg = () => {
+            if (i >= args.length) {
+                return ".{}";
+            }
+            const arg = args[i++];
+            if (isString(arg)) {
+                return "." + arg;
+            }
+            return `[${arg.toString()}]`;
+        }
+        return this.path.replace(".{}", getArg);
     }
     getSelector() {
         return (data: TModel) => {
@@ -54,15 +69,6 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
         return strict
             ? this.path === path.getPath()
             : this.path.startsWith(path.getPath());
-    }
-    includes2(path: (model: TModel) => any, strict: boolean = false) {
-        if (this.path.length === 0) {
-            return false;
-        }
-        const { path: str } = getPathInstructions(path, {});
-        return strict
-            ? this.path === str
-            : this.path.startsWith(str);
     }
     join<T>(spath: IPath<TValue, T> | PathSelector<TValue, T>) {
         const path: IPath<TValue, T> = isPath<TValue, T>(spath)
@@ -321,6 +327,7 @@ export function getPathInstructions(selector: (obj) => any, data) {
     return {
         path,
         pathSelector: {
+            path,
             selector,
             instructions,
             type: safe ? SelectorType.safe : SelectorType.unsafe,

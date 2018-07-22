@@ -9,6 +9,7 @@ import { PathArg } from "./interfaces/IPath";
 import { ISchema, Transformator } from "./interfaces/ISchema";
 import { InstructionValue } from "./interfaces/IInstruction";
 import { Instruction } from "./Instruction";
+import { isPath } from "./Path";
 
 export class Store<TState> implements IStoreInstructor<TState> {
     instructor: IBatch<TState>;
@@ -49,10 +50,14 @@ export class Store<TState> implements IStoreInstructor<TState> {
         this.instructor.batch(batch);
     }
     get<TValue>(
-        path: IPath<TState, TValue>,
+        path: IPath<TState, TValue> | ISchema<TState, TValue>,
         ...pathArgs: PathArg[]
     ) {
-        return path.get(this.stateStore, undefined, pathArgs);
+        if (isPath<TState, TValue>(path)) {
+            return path.get(this.stateStore, undefined, pathArgs);
+        } else {
+            return path.getState(this.stateStore);
+        }
     }
     set<TValue>(
         path: IPath<TState, TValue>,
