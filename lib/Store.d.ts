@@ -16,7 +16,7 @@ export declare class Store<TState> implements IStoreInstructor<TState> {
     constructor(schema?: ISchema<TState, TState>, initState?: TState, transformator?: Transformator<TState, TState>, isImmutable?: boolean);
     state: TState;
     batch(batch: Batch<TState>): void;
-    get<TValue>(path: IPath<TState, TValue>, ...pathArgs: PathArg[]): TValue | undefined;
+    get<TValue>(path: IPath<TState, TValue> | ISchema<TState, TValue>, ...pathArgs: PathArg[]): TValue | undefined;
     set<TValue>(path: IPath<TState, TValue>, value: InstructionValue<TValue>, ...pathArgs: PathArg[]): void;
     add<TValue>(path: IPath<TState, ValueMap<TValue> | TValue | TValue[]>, value: InstructionValue<TValue>, ...pathArgs: PathArg[]): void;
     remove<TValue>(path: IPath<TState, ValueMap<TValue> | TValue[]>, index: string | number | IndexSearch<TValue>, ...pathArgs: PathArg[]): void;

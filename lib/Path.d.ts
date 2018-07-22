@@ -6,11 +6,10 @@ export declare class Path<TModel, TValue> implements IPath<TModel, TValue> {
     private path;
     private constructor();
     toMutable(): Path<TModel, TValue>;
-    getPath(): string;
+    getPath(args?: PathArg[]): string;
     getSelector(): (data: TModel) => TValue;
     getSelectors(): IPathSelector<any, any>[];
     includes(path: IPath<TModel, any>, strict?: boolean): boolean;
-    includes2(path: (model: TModel) => any, strict?: boolean): boolean;
     join<T>(spath: IPath<TValue, T> | PathSelector<TValue, T>): Path<TModel, T>;
     get(object: TModel, defaultValue?: TValue, args?: PathArg[]): TValue | undefined;
     set(object: TModel, value?: PathValue<TValue> | null, args?: PathArg[]): boolean;
