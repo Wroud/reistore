@@ -84,6 +84,7 @@
     "tslint": "^5.10.0",
     "typescript": "^2.9.2",
     "reselect": "3.0.1",
-    "benchmark": "^2.1.4"
+    "benchmark": "^2.1.4",
+    "stmbenchmarks": "1.0.1"
   }
 }

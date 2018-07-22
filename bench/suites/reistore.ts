@@ -1,7 +1,6 @@
-import { createStore, createSchema, createScope, Path, ISchema, IPath, IStore, IStoreInstructor } from "../src";
-import { InstructionType } from "../src/enums/InstructionType";
+import { createStore, createSchema, createScope, Path, InstructionType } from "../../src";
 
-export const reistoreSuite = ({ iterations, normalizedCount, initState, helpers: { createHeavySubscriber } }) => {
+export const reistoreSuite = ({ variables: { normalizedCount }, initState, helpers: { createHeavySubscriber } }) => {
 
     const initStore = (state) => {
         return createStore(createSchema({ ...state }))
