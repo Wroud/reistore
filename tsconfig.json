@@ -30,6 +30,7 @@
     "bin",
     "lib",
     "node_modules",
-    "examples"
+    "examples",
+    "bench"
   ]
 }

@@ -5,7 +5,7 @@ const {
     createStoreObject
 } = require("effector");
 
-const efSuite = (iterations, initCounterStore, deepState, initNormalizedState, normalizedCount) => {
+const efSuite = ({ iterations, normalizedCount, initState, helpers: { createHeavySubscriber } }) => {
     suite("effector", function () {
         set('iterations', iterations);
         const initStore = (state) => {
@@ -62,7 +62,7 @@ const efSuite = (iterations, initCounterStore, deepState, initNormalizedState, n
 
         const addNews = createEvent('add');
         const removeNews = createEvent('remove');
-        const storeNormalized = initStore(initNormalizedState)
+        const storeNormalized = initStore(initState.normalized)
             .on(addNews, ({ news, show }, payload) => ({
                 news: { ...news, [payload.id]: payload },
                 show: [...show, payload.id]
