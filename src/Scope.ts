@@ -3,7 +3,6 @@ import { isStore } from "./tools";
 import { isPath, Path } from "./Path";
 import { Schema } from "./Schema";
 
-
 export class Scope<TState, TParent, TScope>
     extends Schema<TState, TScope>
     implements IScope<TState, TParent, TScope> {

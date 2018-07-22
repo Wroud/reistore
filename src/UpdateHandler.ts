@@ -1,11 +1,12 @@
-import { IUpdateHandler, Handler, IPath } from "./interfaces";
+import { IUpdateHandler, Handler } from "./interfaces";
+import { Instruction } from "Instruction";
 
 export class UpdateHandler<TStore> implements IUpdateHandler<TStore> {
     private handlers: Array<Handler<TStore>>;
     constructor() {
         this.handlers = [];
     }
-    update(state: TStore, updateList: IPath<TStore, any>[]) {
+    update(state: TStore, updateList: Instruction<TStore, any>[]) {
         for (const handler of this.handlers) {
             handler(state, updateList);
         }

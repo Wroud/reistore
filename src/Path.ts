@@ -220,15 +220,13 @@ export class Path<TModel, TValue> implements IPath<TModel, TValue> {
         if (currentKey !== undefined) {
             let newObject = object[currentKey];
             if (newObject === undefined) {
-                if (newObject === undefined) {
-                    newObject = isIndex ? [] : {};
-                } else {
-                    newObject = isArray(newObject)
-                        ? [...newObject]
-                        : { ...newObject };
-                }
-                object[currentKey] = newObject;
+                newObject = isIndex ? [] : {};
+            } else {
+                newObject = isArray(newObject)
+                    ? [...newObject]
+                    : { ...newObject };
             }
+            object[currentKey] = newObject;
             object = newObject;
         }
 

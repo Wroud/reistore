@@ -8,13 +8,14 @@ import { IndexSearch, ValueMap, Batch, IBatch } from "./interfaces/IInstructor";
 import { PathArg } from "./interfaces/IPath";
 import { ISchema, Transformator } from "./interfaces/ISchema";
 import { InstructionValue } from "./interfaces/IInstruction";
+import { Instruction } from "./Instruction";
 
 export class Store<TState> implements IStoreInstructor<TState> {
     instructor: IBatch<TState>;
     updateHandler: IUpdateHandler<TState>;
     schema: ISchema<TState, TState>;
     private stateStore!: TState;
-    private updateList!: IPath<TState, any>[];
+    private updateList!: Instruction<TState, any>[];
     private isUpdating: boolean;
     private isImmutable: boolean;
     private isInjecting: boolean;
@@ -97,7 +98,8 @@ export class Store<TState> implements IStoreInstructor<TState> {
     }
     private transformState(instructions: IterableIterator<IInstruction<TState, any>>) {
         instructions = this.schema.transform(this.stateStore, instructions);
-        for (const { type, path, value, index, args, injection } of instructions) {
+        for (const instruction of instructions) {
+            const { type, path, value, index, args, injection } = instruction;
             switch (type) {
                 case InstructionType.inject:
                     if (!injection) {
@@ -114,7 +116,7 @@ export class Store<TState> implements IStoreInstructor<TState> {
                 case InstructionType.set:
                 case InstructionType.add:
                     if (path) {
-                        this.updateList.push(path);
+                        this.updateList.push(instruction);
                         if (this.isImmutable) {
                             path.setImmutable(this.stateStore, value, args);
                         } else {
@@ -128,7 +130,7 @@ export class Store<TState> implements IStoreInstructor<TState> {
                         break;
                     }
                     if (path) {
-                        this.updateList.push(path);
+                        this.updateList.push(instruction);
                         if (this.isImmutable) {
                             path.setImmutable(this.stateStore, curValue => {
                                 if (!Array.isArray(curValue)) {
