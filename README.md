@@ -51,7 +51,7 @@ const value = store.state.counter;
 ```
 ### Batch API
 You also can use batch api for executing series of commands.
-Batch always faster when you need execute more then one command.
+Batch always faster when you need execute more than one command.
 ```js
 import {
   createStore,
