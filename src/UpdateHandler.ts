@@ -1,5 +1,5 @@
 import { IUpdateHandler, Handler } from "./interfaces";
-import { Instruction } from "Instruction";
+import { Instruction } from "./Instruction";
 
 export class UpdateHandler<TStore> implements IUpdateHandler<TStore> {
     private handlers: Array<Handler<TStore>>;

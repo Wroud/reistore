@@ -29,7 +29,7 @@ export const reduxSuite = ({ iterations, normalizedCount, initState, helpers: { 
                 }
             },
             {
-                name: "counter reducer",
+                name: "counter",
                 bench() {
                     const store = initStore(counterReducer(initState.counter));
                     return () => {
@@ -41,7 +41,7 @@ export const reduxSuite = ({ iterations, normalizedCount, initState, helpers: { 
                 }
             },
             {
-                name: "counter reducer deep",
+                name: "counter deep",
                 bench() {
                     const store = initStore(deepCounterReducer);
                     return () => {
@@ -54,7 +54,7 @@ export const reduxSuite = ({ iterations, normalizedCount, initState, helpers: { 
                 }
             },
             {
-                name: "normalized state",
+                name: "normalized",
                 bench() {
                     const store = initStore(normalizedReducer(initState.normalized));
                     return () => {
@@ -75,6 +75,7 @@ export const reduxSuite = ({ iterations, normalizedCount, initState, helpers: { 
 
                     const add = id => ({ type: 'add', payload: { id: id, text: 'some news text' + id } });
                     const mod = id => ({ type: 'modify', payload: { id, text: Math.random().toString() } });
+                    
                     const newsSelector = createSelector((state: any) => state.news, _ => _);
                     for (let i = 0; i < normalizedCount; i++) {
                         store.dispatch(add(i));

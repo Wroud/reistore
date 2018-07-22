@@ -34,7 +34,7 @@ export const reistoreSuite = ({ iterations, normalizedCount, initState, helpers:
                 }
             },
             {
-                name: "counter reducer",
+                name: "counter",
                 bench() {
                     const counter = Path.create<any, any>(f => f.scope.counter);
                     const store = initStore(initState.counter);
@@ -49,7 +49,7 @@ export const reistoreSuite = ({ iterations, normalizedCount, initState, helpers:
                 }
             },
             {
-                name: "counter reducer with inject",
+                name: "counter with inject",
                 bench() {
                     const counter = Path.create<any, any>(f => f.scope.counter);
                     const store = initStore(initState.counter);
@@ -66,7 +66,7 @@ export const reistoreSuite = ({ iterations, normalizedCount, initState, helpers:
                 }
             },
             {
-                name: "counter reducer deep",
+                name: "counter deep",
                 bench() {
                     const deepSchema = createSchema({ ...initState.deepCounter });
                     const scopeSchema = createScope(deepSchema, f => f.scope0.scope1.scope2.scope3.scope4);
@@ -86,7 +86,7 @@ export const reistoreSuite = ({ iterations, normalizedCount, initState, helpers:
                 }
             },
             {
-                name: "normalized state",
+                name: "normalized",
                 bench() {
                     function* transformer(change, { add, remove }) {
                         if (change.in(newsScope.path)) {

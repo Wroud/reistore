@@ -1,5 +1,6 @@
 export * from "./interfaces";
 export * from "./tools";
+export * from "./enums/InstructionType";
 export { Store, createStore } from "./Store";
 export { Instructor } from "./Instructor";
 export { Path, isPath } from "./Path";
