@@ -38,7 +38,7 @@ const initState = {
 const store = createStore(undefined, initState);
 const counter = Path.create(f => f.counter);
 
-store.subscibe((state, changes) => {
+store.subscribe((state, changes) => {
   if(changes.some(change => change.in(counter))) { // check is counter value changed
     console.log("Counter value: ", state.counter);
   }
@@ -65,13 +65,13 @@ const store = createStore(undefined, initState);
 const counter = Path.create(f => f.counter);
 
 store.batch(instructor => {
-  store.set(counter, 1);
+  instructor.set(counter, 1);
   instructor.set(counter, 2);
 
   console.log(store.state.counter);
   // value = 0
 
-  store.set(counter, 3);
+  instructor.set(counter, 3);
 });
 
 console.log(store.get(counter)); // same as store.state.counter

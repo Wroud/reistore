@@ -1,13 +1,22 @@
 import { InstructionType } from "./enums/InstructionType";
 import { Instructor } from "./Instructor";
-import { IInstruction, IUpdateHandler, IPath, Handler } from "./interfaces";
 import { UpdateHandler } from "./UpdateHandler";
-import { IStoreInstructor } from "./interfaces/IStore";
+import {
+    IStoreInstructor,
+    IndexSearch,
+    ValueMap,
+    Batch,
+    IBatch,
+    InstructionValue,
+    ISchema,
+    Transformator,
+    PathArg,
+    IInstruction,
+    IUpdateHandler,
+    IPath,
+    Handler
+} from "./interfaces";
 import { StoreSchema } from "./StoreSchema";
-import { IndexSearch, ValueMap, Batch, IBatch } from "./interfaces/IInstructor";
-import { PathArg } from "./interfaces/IPath";
-import { ISchema, Transformator } from "./interfaces/ISchema";
-import { InstructionValue } from "./interfaces/IInstruction";
 import { Instruction } from "./Instruction";
 import { isPath } from "./Path";
 

@@ -1,9 +1,17 @@
 import { InstructionType } from "./enums/InstructionType";
-import { IPath, IInstruction } from "./interfaces";
-import { IStore } from "./interfaces/IStore";
-import { IndexSearch, ValueMap, Injection, Batch, IInject, IBatch } from "./interfaces/IInstructor";
-import { PathArg } from "./interfaces/IPath";
-import { InstructionValue } from "./interfaces/IInstruction";
+import {
+    IPath,
+    IInstruction,
+    IStore,
+    IndexSearch,
+    ValueMap,
+    Injection,
+    Batch,
+    IInject,
+    IBatch,
+    PathArg,
+    InstructionValue
+} from "./interfaces";
 import { Instruction } from "./Instruction";
 
 export type InstructorBashInject<TState> = IInject<TState> & IBatch<TState>;
@@ -104,10 +112,10 @@ export class Instructor<TState> implements InstructorBashInject<TState> {
         pathArgs: PathArg[]
     ) {
         return new Instruction(
-            InstructionType.add, 
-            path as IPath<TState, TValue | TValue[]>, 
-            undefined, 
-            pathArgs, 
+            InstructionType.add,
+            path as IPath<TState, TValue | TValue[]>,
+            undefined,
+            pathArgs,
             value
         );
     }
@@ -117,9 +125,9 @@ export class Instructor<TState> implements InstructorBashInject<TState> {
         pathArgs: PathArg[]
     ) {
         return new Instruction(
-            InstructionType.remove, 
-            path as IPath<TState, TValue | TValue[]>, 
-            index, 
+            InstructionType.remove,
+            path as IPath<TState, TValue | TValue[]>,
+            index,
             pathArgs
         );
     }

@@ -1,5 +1,13 @@
 import { isArray, isNumber, isString } from "util";
-import { IPath, PathSelector, IPathInstruction, PathArg, PathValue, IPathSelector, SelectorType } from "./interfaces/IPath";
+import {
+    IPath,
+    PathSelector,
+    IPathInstruction,
+    PathArg,
+    PathValue,
+    IPathSelector,
+    SelectorType
+} from "./interfaces/IPath";
 
 export class Path<TModel, TValue> implements IPath<TModel, TValue> {
     static create<TModel, TValue>(selector: PathSelector<TModel, TValue>) {

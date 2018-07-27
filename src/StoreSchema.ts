@@ -1,6 +1,5 @@
-import { Transformator } from "./interfaces";
+import { Transformator, IStore } from "./interfaces";
 import { isStore } from "./tools";
-import { IStore } from "./interfaces/IStore";
 import { Schema } from "./Schema";
 
 export class StoreSchema<TState> extends Schema<TState, TState> {
