@@ -1,12 +1,12 @@
 import { IInstruction, Transformator, ISchema, IStore } from "./interfaces";
-export declare abstract class Schema<TState, T> implements ISchema<TState, T> {
-    transformator: Transformator<TState, T>;
-    protected scopes: ISchema<TState, any>[];
-    protected initState: T;
-    constructor(initState?: T, transformator?: Transformator<TState, T>);
-    abstract setInitState(store: IStore<TState>): any;
-    abstract getState(state: TState | IStore<TState>): any;
-    transform(state: TState, instructions: IterableIterator<IInstruction<TState, any>>): IterableIterator<IInstruction<TState, any>>;
-    bindSchema(schema: ISchema<TState, any>): void;
-    unBindSchema(schema: ISchema<TState, any>): void;
+export declare class Schema<TState extends object | any[] | Map<any, any>> implements ISchema<TState> {
+    protected transformator: Transformator<TState, any>;
+    protected scopes: ISchema<TState>[];
+    constructor(transformator?: Transformator<TState, any>);
+    readonly schema: ISchema<TState>;
+    transform(store: IStore<TState>, change: IInstruction<TState, any>): void;
+    bindSchema(schema: ISchema<TState>): void;
+    unBindSchema(schema: ISchema<TState>): void;
+    applyChange(store: IStore<TState>, change: IInstruction<TState, any>): void;
 }
+export declare function createSchema<TState extends object | any[] | Map<any, any>>(transformator?: Transformator<TState, {}>): Schema<TState>;

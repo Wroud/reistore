@@ -1,22 +1,12 @@
-import { IPath, PathArg } from "./IPath";
-import { InstructionValue } from "./IInstruction";
-export declare type IndexSearch<TValue> = (value: TValue, index: string | number) => boolean;
-export declare type IndexGetter<TValue> = (value: TValue[]) => string | number;
-export declare type ValueMap<TValue> = {
-    [key: string]: TValue;
-} | {
-    [key: number]: TValue;
-};
-export declare type Injection<TState> = (state: TState, instructor: IBatch<TState>) => any;
-export declare type Batch<TState> = (store: IInject<TState>) => void;
-export interface IBatch<TState> extends IInstructor<TState> {
-    batch(batch: Batch<TState>): any;
-}
-export interface IInject<TState> extends IInstructor<TState> {
-    inject(injection: Injection<TState>): any;
-}
+import { INode, NodeValue, INodeAccessor, ICountainer } from "./INode";
+import { IInstruction } from "./IInstruction";
 export interface IInstructor<TState> {
-    set<TValue>(path: IPath<TState, TValue>, value: InstructionValue<TValue>, ...pathArgs: PathArg[]): any;
-    add<TValue>(path: IPath<TState, ValueMap<TValue> | TValue | TValue[]>, value: InstructionValue<TValue>, ...pathArgs: PathArg[]): any;
-    remove<TValue>(path: IPath<TState, ValueMap<TValue> | TValue[]>, index: string | number | IndexSearch<TValue>, ...pathArgs: PathArg[]): any;
+    state: TState;
+    add<TValue>(node: INodeAccessor<TState, INode<TState, any, TValue, any, any>> | ICountainer<INode<TState, any, TValue, any, any>>, value: NodeValue<TValue>): any;
+    set<TValue>(node: INodeAccessor<TState, INode<TState, any, TValue, any, any>> | ICountainer<INode<TState, any, TValue, any, any>>, value: NodeValue<TValue>): any;
+    remove(node: INodeAccessor<TState, INode<TState, any, any, any, any>> | ICountainer<INode<TState, any, any, any, any>>): any;
+}
+export interface ITransformer<TState, TScope> extends IInstructor<TState> {
+    scope?: TScope;
+    apply(instruction: IInstruction<TState, any>): any;
 }

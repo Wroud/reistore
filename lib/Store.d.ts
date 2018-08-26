@@ -1,28 +1,22 @@
-import { IInstruction, IUpdateHandler, IPath, Handler } from "./interfaces";
-import { IStoreInstructor } from "./interfaces/IStore";
-import { IndexSearch, ValueMap, Batch, IBatch } from "./interfaces/IInstructor";
-import { PathArg } from "./interfaces/IPath";
-import { ISchema, Transformator } from "./interfaces/ISchema";
-import { InstructionValue } from "./interfaces/IInstruction";
-export declare class Store<TState> implements IStoreInstructor<TState> {
-    instructor: IBatch<TState>;
+import { ISchema, Transformator, IInstruction, IUpdateHandler, Handler, INode, INodeAccessor, NodeValue, IStore, IInstructor, IUndo, ICountainer, ExtractNodeValue } from "./interfaces";
+export declare class Store<TState extends object | any[] | Map<any, any>> implements IStore<TState> {
+    instructor: IInstructor<TState>;
     updateHandler: IUpdateHandler<TState>;
-    schema: ISchema<TState, TState>;
-    private stateStore;
+    schema: ISchema<TState>;
     private updateList;
+    private transformer;
+    private stateStore;
     private isUpdating;
-    private isImmutable;
-    private isInjecting;
-    constructor(schema?: ISchema<TState, TState>, initState?: TState, transformator?: Transformator<TState, TState>, isImmutable?: boolean);
+    constructor(initState?: TState, schema?: ISchema<TState>, transformator?: Transformator<TState, TState>);
     state: TState;
-    batch(batch: Batch<TState>): void;
-    get<TValue>(path: IPath<TState, TValue> | ISchema<TState, TValue>, ...pathArgs: PathArg[]): TValue | undefined;
-    set<TValue>(path: IPath<TState, TValue>, value: InstructionValue<TValue>, ...pathArgs: PathArg[]): void;
-    add<TValue>(path: IPath<TState, ValueMap<TValue> | TValue | TValue[]>, value: InstructionValue<TValue>, ...pathArgs: PathArg[]): void;
-    remove<TValue>(path: IPath<TState, ValueMap<TValue> | TValue[]>, index: string | number | IndexSearch<TValue>, ...pathArgs: PathArg[]): void;
-    update(instructions: IterableIterator<IInstruction<TState, any>>): void;
-    private transformState;
+    get<TNode extends INode<TState, any, any, any, any>>(node: INodeAccessor<TState, TNode> | ICountainer<TNode>): ExtractNodeValue<TNode>;
+    set<TValue, TNode extends INode<TState, any, TValue, any, any>>(node: INodeAccessor<TState, TNode> | ICountainer<INode<TState, any, TValue, any, any>>, value: NodeValue<TValue>): void;
+    add<TValue, TNode extends INode<TState, any, TValue, any, any>>(node: INodeAccessor<TState, TNode> | ICountainer<INode<TState, any, TValue, any, any>>, value: NodeValue<TValue>): void;
+    remove<TValue, TNode extends INode<TState, any, TValue, any, any>>(node: INodeAccessor<TState, TNode> | ICountainer<INode<TState, any, any, any, any>>): void;
+    batch(batch: (instructor: IInstructor<TState>) => void): void;
+    update(instructions: IInstruction<TState, any>): void;
+    addChange(change: IUndo<TState, any>): void;
     subscribe(handler: Handler<TState>): this;
     unSubscribe(handler: Handler<TState>): this;
 }
-export declare function createStore<TState>(schema?: ISchema<TState, TState>, initState?: TState, transformator?: Transformator<TState, TState>, isImmutable?: boolean): Store<TState>;
+export declare function createStore<TState extends object | any[] | Map<any, any>>(initState?: TState, schema?: ISchema<TState>, transformator?: Transformator<TState, TState>): Store<TState>;

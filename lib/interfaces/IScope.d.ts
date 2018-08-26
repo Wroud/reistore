@@ -1,9 +1,6 @@
-import { IPath, PathSelector } from "./IPath";
 import { ISchema, Transformator } from "./ISchema";
-export interface IScope<TState, TParent, TScope> {
-    parent: ISchema<TState, TParent>;
-    schema: ISchema<TState, TState>;
-    path: IPath<TState, TScope>;
-    joinPath<T>(path: IPath<TScope, T> | PathSelector<TScope, T>): IPath<TState, T>;
-    createScope<TNewScope>(scope: IPath<TScope, TNewScope> | PathSelector<TScope, TNewScope>, initState?: TNewScope, transformator?: Transformator<TState, TNewScope>, mutateParent?: boolean): IScope<TState, TScope, TNewScope>;
+import { INode } from "./INode";
+export interface IScope<TState extends object | any[] | Map<any, any>, TParent, TScope> extends ISchema<TState> {
+    node: INode<TState, TParent, TScope, any, any>;
+    createScope<TNewScope>(node: INode<TState, TScope, TNewScope, any, any>, transformator?: Transformator<TState, TNewScope>): IScope<TState, TScope, TNewScope>;
 }

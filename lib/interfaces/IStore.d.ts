@@ -1,15 +1,17 @@
 import { IUpdateHandler, Handler } from "./IUpdateHandler";
-import { IBatch } from "./IInstructor";
+import { IInstructor } from "./IInstructor";
 import { IInstruction } from "./IInstruction";
-import { IPath, PathArg } from "./IPath";
+import { INode, INodeAccessor, ExtractNodeValue, IUndo, ICountainer } from "./INode";
 import { ISchema } from "./ISchema";
-export interface IStore<TState> {
+export interface IStore<TState extends object | any[] | Map<any, any>> extends IInstructor<TState> {
     state: TState;
-    instructor: IBatch<TState>;
+    instructor: IInstructor<TState>;
     updateHandler: IUpdateHandler<TState>;
-    get<TValue>(path: IPath<TState, TValue> | ISchema<TState, TValue>, ...pathArgs: PathArg[]): any;
-    update(instructins: IterableIterator<IInstruction<TState, any>>): any;
+    schema: ISchema<TState>;
+    get<TNode extends INode<TState, any, any, any, any>>(node: INodeAccessor<TState, TNode> | ICountainer<TNode>): ExtractNodeValue<TNode>;
+    update(instruction: IInstruction<TState, any>): any;
+    batch(batch: (instructor: IInstructor<TState>) => void): any;
+    addChange(change: IUndo<TState, any>): any;
     subscribe(handler: Handler<TState>): this;
     unSubscribe(handler: Handler<TState>): this;
 }
-export declare type IStoreInstructor<TState> = IStore<TState> & IBatch<TState>;

@@ -1,9 +1,8 @@
-import { IUpdateHandler, Handler } from "./interfaces";
-import { Instruction } from "./Instruction";
-export declare class UpdateHandler<TStore> implements IUpdateHandler<TStore> {
+import { IUpdateHandler, Handler, IUndo } from "./interfaces";
+export declare class UpdateHandler<TState> implements IUpdateHandler<TState> {
     private handlers;
     constructor();
-    update(state: TStore, updateList: Instruction<TStore, any>[]): void;
-    subscribe(handler: Handler<TStore>): this;
-    unSubscribe(handler: Handler<TStore>): this;
+    update(state: TState, updateList: IUndo<TState, any>[]): void;
+    subscribe(handler: Handler<TState>): this;
+    unSubscribe(handler: Handler<TState>): this;
 }
