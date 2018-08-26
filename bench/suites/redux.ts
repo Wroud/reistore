@@ -11,48 +11,48 @@ export const reduxSuite = ({ variables: { normalizedCount }, initState, helpers:
     return {
         name: "redux",
         benchmarks: [
-            // {
-            //     name: "create",
-            //     bench() {
-            //         return () => {
-            //             const store = createStore((d = undefined) => d);
-            //             store.subscribe(() => { });
-            //             const action = { type: "any" };
-            //         };
-            //     }
-            // },
-            // {
-            //     name: "modify",
-            //     bench() {
-            //         const store = initStore(modifyReducer(initState.counter()));
-            //         return () => store.dispatch({ type: "init" });
-            //     }
-            // },
-            // {
-            //     name: "counter",
-            //     bench() {
-            //         const store = initStore(counterReducer(initState.counter()));
-            //         return () => {
-            //             store.dispatch({ type: "INCREMENT" });
-            //             store.dispatch({ type: "DECREMENT" });
-            //             store.dispatch({ type: "INCREMENT" });
-            //             store.dispatch({ type: "DECREMENT" });
-            //         };
-            //     }
-            // },
-            // {
-            //     name: "counter deep",
-            //     bench() {
-            //         const store = initStore(deepCounterReducer);
-            //         return () => {
-            //             store.dispatch({ type: "INCREMENT" });
-            //             store.dispatch({ type: "DECREMENT" });
-            //             store.dispatch({ type: "INCREMENT" });
-            //             store.dispatch({ type: "DECREMENT" });
-            //             store.getState();
-            //         };
-            //     }
-            // },
+            {
+                name: "create",
+                bench() {
+                    return () => {
+                        const store = createStore((d = undefined) => d);
+                        store.subscribe(() => { });
+                        const action = { type: "any" };
+                    };
+                }
+            },
+            {
+                name: "modify",
+                bench() {
+                    const store = initStore(modifyReducer(initState.counter()));
+                    return () => store.dispatch({ type: "init" });
+                }
+            },
+            {
+                name: "counter",
+                bench() {
+                    const store = initStore(counterReducer(initState.counter()));
+                    return () => {
+                        store.dispatch({ type: "INCREMENT" });
+                        store.dispatch({ type: "DECREMENT" });
+                        store.dispatch({ type: "INCREMENT" });
+                        store.dispatch({ type: "DECREMENT" });
+                    };
+                }
+            },
+            {
+                name: "counter deep",
+                bench() {
+                    const store = initStore(deepCounterReducer);
+                    return () => {
+                        store.dispatch({ type: "INCREMENT" });
+                        store.dispatch({ type: "DECREMENT" });
+                        store.dispatch({ type: "INCREMENT" });
+                        store.dispatch({ type: "DECREMENT" });
+                        store.getState();
+                    };
+                }
+            },
             {
                 name: "normalized",
                 bench() {

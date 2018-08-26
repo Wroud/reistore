@@ -1,134 +1,39 @@
-import { InstructionType } from "./enums/InstructionType";
 import {
-    IPath,
-    IInstruction,
     IStore,
-    IndexSearch,
-    ValueMap,
-    Injection,
-    Batch,
-    IInject,
-    IBatch,
-    PathArg,
-    InstructionValue
+    INode,
+    INodeAccessor,
+    NodeValue,
+    IInstructor,
+    ICountainer,
+    PathNode
 } from "./interfaces";
 import { Instruction } from "./Instruction";
+import { InstructionType } from "./enums/InstructionType";
+import { isCountainer } from "./Node";
 
-export type InstructorBashInject<TState> = IInject<TState> & IBatch<TState>;
-
-export class Instructor<TState> implements InstructorBashInject<TState> {
+export class Instructor<TState extends object | any[] | Map<any, any>> implements IInstructor<TState> {
     private store: IStore<TState>;
-    private batchInstructions!: IInstruction<any, any>[];
-    private isBatch!: boolean;
     constructor(store: IStore<TState>) {
         this.store = store;
     }
-    batch(batch: Batch<TState>) {
-        this.beginTransaction();
-        batch(this);
-        this.flush();
-    }
-    inject(injection: Injection<TState>) {
-        if (this.isBatch) {
-            this.batchInstructions.push(Instructor.createInject(injection));
-        } else {
-            this.store.update([Instructor.createInject(injection)][Symbol.iterator]());
-        }
+    get state() {
+        return this.store.state;
     }
     set<TValue>(
-        path: IPath<TState, TValue>,
-        value: InstructionValue<TValue>,
-        ...pathArgs: PathArg[]
+        node: INodeAccessor<TState, INode<TState, any, TValue, any, any>> | ICountainer<INode<TState, any, TValue, any, any>>,
+        value: NodeValue<TValue>
     ) {
-        if (this.isBatch) {
-            this.batchInstructions.push(Instructor.createSet(path, value, pathArgs));
-        } else {
-            this.store.update([Instructor.createSet(path, value, pathArgs)][Symbol.iterator]());
-        }
+        this.store.update(new Instruction(InstructionType.set, isCountainer(node) ? node[PathNode] : node, value));
     }
     add<TValue>(
-        path: IPath<TState, ValueMap<TValue> | TValue | TValue[]>,
-        value: InstructionValue<TValue>,
-        ...pathArgs: PathArg[]
+        node: INodeAccessor<TState, INode<TState, any, TValue, any, any>> | ICountainer<INode<TState, any, TValue, any, any>>,
+        value: NodeValue<TValue>
     ) {
-        if (this.isBatch) {
-            this.batchInstructions.push(Instructor.createAdd(path, value, pathArgs));
-        } else {
-            this.store.update([Instructor.createAdd(path, value, pathArgs)][Symbol.iterator]());
-        }
+        this.store.update(new Instruction(InstructionType.add, isCountainer(node) ? node[PathNode] : node, value));
     }
-    remove<TValue>(
-        path: IPath<TState, ValueMap<TValue> | TValue[]>,
-        index: string | number | IndexSearch<TValue>,
-        ...pathArgs: PathArg[]
+    remove(
+        node: INodeAccessor<TState, INode<TState, any, any, any, any>> | ICountainer<INode<TState, any, any, any, any>>
     ) {
-        if (this.isBatch) {
-            this.batchInstructions.push(Instructor.createRemove(path, index, pathArgs));
-        } else {
-            this.store.update([Instructor.createRemove(path, index, pathArgs)][Symbol.iterator]());
-        }
-    }
-    private beginTransaction() {
-        if (this.isBatch) {
-            console.group("Reistate:Instructor");
-            console.error("In same time you can begin only one batch");
-            console.error("batch: ", this.batchInstructions);
-            console.groupEnd();
-            return;
-        }
-        this.batchInstructions = [];
-        this.isBatch = true;
-    }
-    private flush() {
-        this.isBatch = false;
-        this.store.update(this.batchInstructions[Symbol.iterator]());
-    }
-    static createInject<TState>(injection: Injection<TState>) {
-        return new Instruction(
-            InstructionType.inject,
-            undefined,
-            undefined,
-            undefined,
-            undefined,
-            injection
-        );
-    }
-    static createSet<TState, TValue>(
-        path: IPath<TState, TValue>,
-        value: InstructionValue<TValue>,
-        pathArgs: PathArg[]
-    ) {
-        return new Instruction(
-            InstructionType.set,
-            path as IPath<TState, TValue | TValue[]>,
-            undefined,
-            pathArgs,
-            value
-        );
-    }
-    static createAdd<TState, TValue>(
-        path: IPath<TState, ValueMap<TValue> | TValue | TValue[]>,
-        value: InstructionValue<TValue>,
-        pathArgs: PathArg[]
-    ) {
-        return new Instruction(
-            InstructionType.add,
-            path as IPath<TState, TValue | TValue[]>,
-            undefined,
-            pathArgs,
-            value
-        );
-    }
-    static createRemove<TState, TValue>(
-        path: IPath<TState, ValueMap<TValue> | TValue[]>,
-        index: string | number | IndexSearch<TValue>,
-        pathArgs: PathArg[]
-    ) {
-        return new Instruction(
-            InstructionType.remove,
-            path as IPath<TState, TValue | TValue[]>,
-            index,
-            pathArgs
-        );
+        this.store.update(new Instruction(InstructionType.remove, isCountainer(node) ? node[PathNode] : node, null));
     }
 }

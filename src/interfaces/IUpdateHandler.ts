@@ -1,6 +1,6 @@
-import { IInstruction } from "./IInstruction";
+import { IUndo } from "./INode";
 
-export type Handler<TState> = (state: TState, updateList: IInstruction<TState, any>[]) => void
+export type Handler<TState> = (state: TState, updateList: IUndo<TState, any>[]) => void
 export interface IUpdateHandler<TState> {
     update: Handler<TState>;
     subscribe(handler: Handler<TState>): this;

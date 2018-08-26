@@ -1,8 +1,9 @@
-import { createStore, createSchema, createScope, Path, InstructionType } from "../../src";
+import { createStore, createSchema, createScope, InstructionType } from "../../src";
+import { buildSchema } from "../../src/Node";
 
 export const reistoreSuite = ({ variables: { normalizedCount }, initState, helpers: { subscribeChecker } }) => {
     const initStore = (state) => {
-        return createStore(createSchema({ ...state }))
+        return createStore(state, createSchema())
             .subscribe(() => { });
     };
     return {
@@ -10,107 +11,107 @@ export const reistoreSuite = ({ variables: { normalizedCount }, initState, helpe
         after() {
         },
         benchmarks: [
-            // {
-            //     name: "create",
-            //     bench() {
-            //         const schema = createSchema({});
-            //         return () => {
-            //             const store = createStore(schema)
-            //                 .subscribe(() => { });
-            //             Path.create<any, any>(f => f.scope);
-            //         }
-            //     }
-            // },
-            // {
-            //     name: "modify",
-            //     bench() {
-            //         const counter = Path.create<any, any>(f => f.scope.counter);
-            //         const store = initStore(initState.counter());
-            //         return () => {
-            //             store.set(counter, 1);
-            //         }
-            //     }
-            // },
-            // {
-            //     name: "counter",
-            //     bench() {
-            //         const counter = Path.create<any, any>(f => f.scope.counter);
-            //         const store = initStore(initState.counter());
-            //         return () => {
-            //             store.batch(store => {
-            //                 store.set(counter, v => v + 1);
-            //                 store.set(counter, v => v - 1);
-            //                 store.set(counter, v => v + 1);
-            //                 store.set(counter, v => v - 1);
-            //             });
-            //         };
-            //     }
-            // },
-            // {
-            //     name: "counter with inject",
-            //     bench() {
-            //         const counter = Path.create<any, any>(f => f.scope.counter);
-            //         const store = initStore(initState.counter());
-            //         return () => {
-            //             store.batch(store => {
-            //                 store.inject(({ scope: { counter: value } }, inject) => {
-            //                     inject.set(counter, value - 1);
-            //                     inject.set(counter, value + 1);
-            //                     inject.set(counter, value - 1);
-            //                     inject.set(counter, value + 1);
-            //                 });
-            //             });
-            //         };
-            //     }
-            // },
-            // {
-            //     name: "counter deep",
-            //     bench() {
-            //         const deepSchema = createSchema(initState.deepCounter());
-            //         const scopeSchema = createScope(deepSchema, f => f.scope0.scope1.scope2.scope3.scope4);
-
-            //         const counter = scopeSchema.joinPath(f => f.counter);
-            //         const store = createStore(deepSchema)
-            //             .subscribe(() => { });
-
-            //         return () => {
-            //             store.batch(store => {
-            //                 store.set(counter, v => v + 1);
-            //                 store.set(counter, v => v - 1);
-            //                 store.set(counter, v => v + 1);
-            //                 store.set(counter, v => v - 1);
-            //             });
-            //         };
-            //     }
-            // },
             {
-                name: "normalized",
+                name: "create",
                 bench() {
-                    function* transformer(change, { add, remove }) {
-                        if (change.in(newsScope.path)) {
-                            if (change.type === InstructionType.add) {
-                                yield add(showArgPath, change.value.id);
-                            } else if (change.type === InstructionType.remove) {
-                                yield remove(showScope.path, change.index);
-                            }
-                        }
-                        yield change;
+                    const schema = createSchema();
+                    return () => {
+                        const store = createStore(schema)
+                            .subscribe(() => { });
+                        buildSchema().field("value" as never);
                     }
-                    const schemaNormalized = createSchema(initState.normalized(), transformer);
-                    const newsScope = createScope(schemaNormalized, (f: any) => f.news);
-                    const showScope = createScope(schemaNormalized, (f: any) => f.show);
-                    const newsArgPath = newsScope.joinPath(f => f["{}"]);
-                    const showArgPath = showScope.joinPath(f => f["{}"]);
-                    const store = createStore(schemaNormalized)
+                }
+            },
+            {
+                name: "modify",
+                bench() {
+                    const { schema: { scope: { counter } } } = buildSchema()
+                        .node("scope", b =>
+                            b.field("counter", 0)
+                        );
+                    const store = initStore(initState.counter());
+                    return () => {
+                        store.set(counter, 1);
+                    }
+                }
+            },
+            {
+                name: "counter",
+                bench() {
+                    const { schema: { scope: { counter } } } = buildSchema()
+                        .node("scope", b =>
+                            b.field("counter", 0)
+                        );
+                    const store = initStore(initState.counter());
+                    return () => {
+                        store.batch(store => {
+                            store.set(counter, v => v + 1);
+                            store.set(counter, v => v - 1);
+                            store.set(counter, v => v + 1);
+                            store.set(counter, v => v - 1);
+                        });
+                    };
+                }
+            },
+            {
+                name: "counter deep",
+                bench() {
+                    const { schema } = buildSchema()
+                        .node("scope0", b =>
+                            b.node("scope1", b =>
+                                b.node("scope2", b =>
+                                    b.node("scope3", b =>
+                                        b.node("scope4", b =>
+                                            b.field("counter", 0)
+                                        )
+                                    )
+                                )
+                            )
+                        );
+                    const counter = schema.scope0.scope1.scope2.scope3.scope4.counter;
+                    const store = createStore(initState.deepCounter())
                         .subscribe(() => { });
 
                     return () => {
                         store.batch(store => {
+                            store.set(counter, v => v + 1);
+                            store.set(counter, v => v - 1);
+                            store.set(counter, v => v + 1);
+                            store.set(counter, v => v - 1);
+                        });
+                    };
+                }
+            },
+            {
+                name: "normalized",
+                bench() {
+                    const { schema } = buildSchema()
+                        .map("news")
+                        .array("show");
+                    const store = createStore(
+                        { news: new Map(), show: [] },
+                        undefined,
+                        (change, transformer) => {
+                            if (change.node.in(schema.news(), false)) {
+                                if (change.type === InstructionType.add) {
+                                    transformer.add(schema.show(store.get(schema.show).length), change.value.id);
+                                } else if (change.type === InstructionType.remove) {
+                                    var news = change.node.get(transformer.state);
+                                    var ind = store.get(schema.show).indexOf(news.id);
+                                    transformer.remove(schema.show(ind));
+                                }
+                            }
+                            transformer.apply(change);
+                        });
+                    store.subscribe(() => { });
+
+                    return () => {
+                        store.batch(store => {
                             for (let i = 0; i < normalizedCount; i++) {
-                                store.add(newsArgPath, { id: i, text: "some news text" + i }, i);
+                                store.add(schema.news(i), { id: i, text: "some news text" + i });
                             }
                             for (let i = normalizedCount - 1; i >= 0; i--) {
-                                store.remove(newsScope.path, i);
+                                store.remove(schema.news(i));
                             }
                         });
                     }
@@ -119,22 +120,34 @@ export const reistoreSuite = ({ variables: { normalizedCount }, initState, helpe
             {
                 name: "normalized modify",
                 bench() {
-                    const schemaNormalized = createSchema(initState.normalized());
-                    const newsScope = createScope(schemaNormalized, (f: any) => f.news);
-                    const newsArgPath = newsScope.joinPath(f => f["{}"]);
-                    const textPathreal = newsArgPath.join(f => f.text);
-
-                    const store = createStore(schemaNormalized);
-
-                    store.batch(batch => {
+                    const { schema } = buildSchema()
+                        .map("news")
+                        .array("show");
+                    const store = createStore(
+                        { news: new Map(), show: [] },
+                        undefined,
+                        (change, transformer) => {
+                            if (change.node.in(schema.news(), false)) {
+                                if (change.type === InstructionType.add) {
+                                    transformer.add(schema.show(store.get(schema.show).length), change.value.id);
+                                } else if (change.type === InstructionType.remove) {
+                                    var news = change.node.get(transformer.state);
+                                    var ind = store.get(schema.show).indexOf(news.id);
+                                    transformer.remove(schema.show(ind));
+                                }
+                            }
+                            transformer.apply(change);
+                        });
+                    store.subscribe(() => { });
+                    store.batch(store => {
                         for (let i = 0; i < normalizedCount; i++) {
-                            batch.add(newsArgPath, { id: i, text: "some news text" + i }, i);
+                            store.add(schema.news(i), { id: i, text: "some news text" + i });
                         }
                     });
                     let invokeCount = 0;
                     return () => {
                         for (let i = 0; i < normalizedCount; i++) {
-                            store.set(textPathreal, Math.random().toString(), i);
+                            store.set(schema.news(i, s => s.text), Math.random().toString());
                         }
                         invokeCount += normalizedCount;
                     };
@@ -143,20 +156,35 @@ export const reistoreSuite = ({ variables: { normalizedCount }, initState, helpe
             {
                 name: "normalized modify with subscribers",
                 bench() {
-                    const schemaNormalized = createSchema(initState.normalized());
-                    const newsScope = createScope(schemaNormalized, (f: any) => f.news);
-                    const newsArgPath = newsScope.joinPath(f => f["{}"]);
-                    const textPathreal = newsArgPath.join(f => f.text);
-                    const store = createStore(schemaNormalized);
-
                     const { subscriber, getCalls } = subscribeChecker();
+
+                    const { schema } = buildSchema()
+                        .map("news")
+                        .array("show");
+                    const store = createStore(
+                        { news: new Map(), show: [] },
+                        undefined,
+                        (change, transformer) => {
+                            if (change.node.in(schema.news(), false)) {
+                                if (change.type === InstructionType.add) {
+                                    transformer.add(schema.show(store.get(schema.show).length), change.value.id);
+                                } else if (change.type === InstructionType.remove) {
+                                    var news = change.node.get(transformer.state);
+                                    var ind = store.get(schema.show).indexOf(news.id);
+                                    transformer.remove(schema.show(ind));
+                                }
+                            }
+                            transformer.apply(change);
+                        });
+                    store.subscribe(() => { });
                     store.batch(batch => {
                         for (let i = 0; i < normalizedCount; i++) {
-                            batch.add(newsArgPath, { id: i, text: "some news text" + i }, i);
+                            let adr = schema.news(i);
+                            batch.add(adr, { id: i, text: "some news text" + i });
                             store.subscribe((state, changes) => {
                                 const isChanged = changes.length === 1
-                                    ? changes[0].in(textPathreal, false, i)
-                                    : changes.some(change => change.in(textPathreal, false, i));
+                                    ? changes[0].in(adr, false)
+                                    : changes.some(change => change.in(adr, false));
                                 if (isChanged) {
                                     subscriber();
                                 }
@@ -167,7 +195,7 @@ export const reistoreSuite = ({ variables: { normalizedCount }, initState, helpe
                     return {
                         bench: () => {
                             for (let i = 0; i < normalizedCount; i++) {
-                                store.set(textPathreal, Math.random().toString(), i);
+                                store.set(schema.news(i, s => s.text), Math.random().toString());
                             }
                             invokeCount += normalizedCount;
                         },

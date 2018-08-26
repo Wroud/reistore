@@ -1,36 +1,49 @@
-import { ITransformer, IPath, InstructionValue, PathArg, ValueMap, IndexSearch } from "./interfaces";
-import { Instructor } from "./Instructor";
+import { ITransformer, INodeAccessor, NodeValue, INode, ApplyChange, IInstruction, IStore, PathNode, ICountainer } from "./interfaces";
+import { InstructionType } from "./enums/InstructionType";
+import { Instruction } from "./Instruction";
+import { isCountainer } from "./Node";
 
-export class Transformer<TState, TScope> implements ITransformer<TState, TScope>{
-    get scope(): TScope {
-        return this.scopeSelector();
-    }
-    state: TState;
-    private scopeSelector: () => TScope;
-    constructor(scope: () => TScope, state: TState) {
-        this.scopeSelector = scope;
-        this.state = state;
-    }
-
-    set<TState, TValue>(
-        path: IPath<TState, TValue>,
-        value: InstructionValue<TValue>,
-        ...pathArgs: PathArg[]
+export class Transformer<TState extends object | any[] | Map<any, any>, TScope>
+    implements ITransformer<TState, TScope>{
+    private node?: INode<TState, any, TScope, any, any>;
+    private store: IStore<TState>;
+    private applyChange: ApplyChange<TState>;
+    constructor(
+        store: IStore<TState>,
+        applyChange: ApplyChange<TState>,
+        node?: INode<TState, any, TScope, any, any>
     ) {
-        return Instructor.createSet(path, value, pathArgs);
+        this.node = node;
+        this.store = store;
+        this.applyChange = applyChange;
     }
-    add<TState, TValue>(
-        path: IPath<TState, ValueMap<TValue> | TValue | TValue[]>,
-        value: InstructionValue<TValue>,
-        ...pathArgs: PathArg[]
-    ) {
-        return Instructor.createAdd(path, value, pathArgs);
+    get scope() {
+        if (this.node) {
+            return this.store.get(this.node) as TScope;
+        }
+        return undefined;
     }
-    remove<TState, TValue>(
-        path: IPath<TState, ValueMap<TValue> | TValue[]>,
-        index: string | number | IndexSearch<TValue>,
-        ...pathArgs: PathArg[]
+    get state() {
+        return this.store.state;
+    }
+    apply(instruction: IInstruction<TState, any>) {
+        this.applyChange(this.store, instruction);
+    }
+    set<TValue>(
+        node: INodeAccessor<TState, INode<TState, any, TValue, any, any>> | ICountainer<INode<TState, any, TValue, any, any>>,
+        value: NodeValue<TValue>
     ) {
-        return Instructor.createRemove(path, index, pathArgs);
+        this.applyChange(this.store, new Instruction(InstructionType.set, isCountainer(node) ? node[PathNode] : node, value));
+    }
+    add<TValue>(
+        node: INodeAccessor<TState, INode<TState, any, TValue, any, any>> | ICountainer<INode<TState, any, TValue, any, any>>,
+        value: NodeValue<TValue>
+    ) {
+        this.applyChange(this.store, new Instruction(InstructionType.add, isCountainer(node) ? node[PathNode] : node, value));
+    }
+    remove(
+        node: INodeAccessor<TState, INode<TState, any, any, any, any>> | ICountainer<INode<TState, any, any, any, any>>
+    ) {
+        this.applyChange(this.store, new Instruction(InstructionType.remove, isCountainer(node) ? node[PathNode] : node, null));
     }
 }

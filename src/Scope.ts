@@ -1,66 +1,59 @@
-import { IScope, IPath, Transformator, PathSelector, ISchema, IStore } from "./interfaces";
-import { isStore } from "./tools";
-import { isPath, Path } from "./Path";
+import { IScope, Transformator, ISchema, INode, IInstruction, IStore, ICountainer, PathNode } from "./interfaces";
 import { Schema } from "./Schema";
+import { Transformer } from "./Transformer";
+import { isCountainer } from "./Node";
 
-export class Scope<TState, TParent, TScope>
-    extends Schema<TState, TScope>
+export class Scope<TState extends object | any[] | Map<any, any>, TParent, TScope>
+    extends Schema<TState>
     implements IScope<TState, TParent, TScope> {
 
-    parent: ISchema<TState, TParent>;
-    schema: ISchema<TState, TState>;
-    path: IPath<TState, TScope>;
+    private parent: ISchema<TState>;
+    private _schema: ISchema<TState>;
+    node: INode<TState, TParent, TScope, any, any>;
 
     constructor(
-        parent: ISchema<TState, TParent>,
-        path: IPath<TState, TScope>,
-        initState?: TScope,
-        transformator?: Transformator<TState, TScope>,
-        mutateParent: boolean = true
+        parent: ISchema<TState>,
+        node: INode<TState, TParent, TScope, any, any> | ICountainer<INode<TState, TParent, TScope, any, any>>,
+        transformator?: Transformator<TState, TScope>
     ) {
-        super(initState, transformator);
+        super(transformator);
         this.parent = parent;
-        this.schema = isScope<TState, any, any>(parent)
-            ? parent.schema
-            : parent as any as ISchema<TState, TState>;
-        this.path = mutateParent ? path.toMutable() : path;
+        this._schema = parent.schema;
+        if (isCountainer<INode<TState, TParent, TScope, any, any>>(node)) {
+            this.node = node[PathNode];
+        } else {
+            this.node = node;
+        }
         this.parent.bindSchema(this);
+        this.transform = this.transform.bind(this);
     }
-    setInitState(store: IStore<TState>) {
-        store.instructor.set(this.path, v => v === undefined ? this.initState : v);
-        for (const scope of this.scopes) {
-            scope.setInitState(store);
+    get schema() {
+        return this._schema;
+    }
+    transform(store: IStore<TState>, change: IInstruction<TState, any>) {
+        if (this.transformator !== undefined) {
+            const transformer = new Transformer(store, this.applyChange, this.node);
+            this.transformator(change, transformer)
+        } else {
+            this.applyChange(store, change);
         }
     }
-    getState(state: TState | IStore<TState>) {
-        return isStore<TState>(state)
-            ? this.path.get(state.state, this.initState) as TScope
-            : this.path.get(state, this.initState) as TScope;
-    }
-    joinPath<TValue>(path: IPath<TScope, TValue> | PathSelector<TScope, TValue>) {
-        return this.path.join(path);
-    }
     createScope<TNewScope>(
-        scope: IPath<TScope, TNewScope> | PathSelector<TScope, TNewScope>,
-        initState?: TNewScope,
-        transformator?: Transformator<TState, TNewScope>,
-        mutateParent?: boolean
+        node: INode<TState, TScope, TNewScope, any, any> | ICountainer<INode<TState, TScope, TNewScope, any, any>>,
+        transformator?: Transformator<TState, TNewScope>
     ): IScope<TState, TScope, TNewScope> {
-        return new Scope(this, this.path.join(scope), initState, transformator, mutateParent);
+        return new Scope(this, node, transformator);
     }
 }
 
-export function createScope<TState, TModel, TScope>(
-    parent: ISchema<TState, TModel>,
-    path: IPath<TState, TScope> | PathSelector<TState, TScope>,
-    initState?: TScope,
-    transformator?: Transformator<TState, TScope>,
-    mutateParent?: boolean
+export function createScope<TState extends object | any[] | Map<any, any>, TModel, TScope>(
+    parent: ISchema<TState>,
+    node: INode<TState, TModel, TScope, any, any> | ICountainer<INode<TState, TModel, TScope, any, any>>,
+    transformator?: Transformator<TState, TScope>
 ) {
-    const rpath = isPath<TState, TScope>(path) ? path : Path.create(path);
-    return new Scope(parent, rpath, initState, transformator, mutateParent);
+    return new Scope(parent, node, transformator);
 }
 
-export function isScope<TStore, TModel, TScope>(object): object is IScope<TStore, TModel, TScope> {
-    return "path" in object && "parent" in object;
+export function isScope<TStore extends object | any[] | Map<any, any>, TModel, TScope>(object): object is IScope<TStore, TModel, TScope> {
+    return object instanceof Scope;
 }

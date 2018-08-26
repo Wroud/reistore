@@ -1,51 +1,52 @@
 import { expect } from "chai";
 import "mocha";
 
-import { Path, createStore, createSchema, createScope, Instructor, IInstruction, ITransformer } from "../src/";
+import { createStore, createSchema, createScope, Instructor, IInstruction, ITransformer, PathNode } from "../src/";
+import { buildSchema } from "../src/Node";
 
 describe("Transform", () => {
     interface IArray {
         number: number
-    }
-    interface IIArray {
-        [key: number]: IArray
     }
     interface IModel {
         value: string;
         scope: {
             value: number;
             array: IArray[],
-            indexedArray: IIArray
+            indexedArray: Map<number, IArray>
         }
     }
+    const { schema: nodeSchema } = buildSchema<IModel>()
+        .field("value", () => "123" as string)
+        .node("scope", b =>
+            b.field("value", () => 15 as number)
+                .array("array", b =>
+                    b.field("number"),
+                    () => [] as IArray[]
+                )
+                .map("indexedArray", b =>
+                    b.field("number"),
+                    () => new Map()
+                ),
+            () => ({} as IModel["scope"])
+        );
 
     it("two transformers with scope", () => {
-        function* transformer(
-            instruction: IInstruction<IModel, any>,
-            transformer: ITransformer<IModel, IModel>
-        ) {
-            if (instruction.in(scopeValue) && instruction.value !== undefined) {
-                yield transformer.set(stateValue, instruction.value.toString());
+
+        const schema = createSchema<IModel>((change, transformer) => {
+            if (change.node.in(nodeSchema.scope, false) && change.value !== undefined) {
+                transformer.set(nodeSchema.value, change.value.toString());
             }
-            yield instruction;
-        }
+            transformer.apply(change);
+        });
 
-        const schema = createSchema<IModel>({} as IModel, transformer);
-        const scopeValue = Path.create<IModel, number>(f => f.scope.value);
-        const stateValue = Path.create<IModel, string>(f => f.value);
-
-        function* scopeTransformer(
-            instruction: IInstruction<IModel, any>,
-            transformer: ITransformer<IModel, IModel["scope"]>
-        ) {
-            if (instruction.in(Path.create(f => f.value)) && instruction.value !== undefined) {
-                yield transformer.set(Path.create(f => f.scope.value), parseInt(instruction.value));
+        const scope = createScope(schema, nodeSchema.scope, (change, transformer) => {
+            if (change.node.in(nodeSchema.value, false) && change.value !== undefined) {
+                transformer.set(nodeSchema.scope.value, parseInt(change.value));
             }
-            yield instruction;
-        }
-
-        const scope = createScope(schema, f => f.scope, {}, scopeTransformer);
-        const store = createStore<IModel>(schema);
+            transformer.apply(change);
+        });
+        const store = createStore<IModel>({} as IModel, schema);
         const expectedState = {
             value: "0",
             scope: {
@@ -58,12 +59,12 @@ describe("Transform", () => {
                 value: 1
             }
         }
-        store.set(scopeValue, 0);
+        store.set(nodeSchema.scope.value, 0);
         expect(store.state.scope.value).to.be.equal(0);
         expect(store.state.value).to.be.equal("0");
         expect(store.state).to.be.deep.equal(expectedState);
 
-        store.set(stateValue, "1");
+        store.set(nodeSchema.value, "1");
         expect(store.state.scope.value).to.be.equal(1);
         expect(store.state.value).to.be.equal("1");
         expect(store.state).to.be.deep.equal(expectedState1);

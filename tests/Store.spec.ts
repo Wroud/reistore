@@ -1,56 +1,48 @@
 import { expect } from "chai";
 import "mocha";
 
-import { Path, createStore, createSchema, createScope } from "../src/";
+import { createStore, createSchema, createScope } from "../src/";
+import { buildSchema } from "../src/Node";
 
 describe("Store", () => {
     interface IArray {
         number: number
-    }
-    interface IIArray {
-        [key: number]: IArray
     }
     interface IModel {
         value: string;
         scope: {
             value: number;
             array: IArray[],
-            indexedArray: IIArray
+            indexedArray: Map<number, IArray>
         }
     }
-
-    it("init state", () => {
-        const schema = createSchema<IModel>({ value: "123" } as IModel);
-        const scope = createScope<IModel, IModel, IModel["scope"]>(
-            schema,
-            f => f.scope,
-            {
-                value: 15,
-                array: [
-                    { number: 5 }
-                ]
-            } as IModel["scope"]
-        );
-        const array = scope.createScope(
-            f => f.indexedArray,
-            {
-                0: { number: 6 }
-            }
-        );
-        const store = createStore<IModel>(schema);
-        const expectedState = {
-            value: "123",
-            scope: {
+    const { schema: nodeSchema } = buildSchema<IModel>()
+        .field("value", () => "123")
+        .node("scope", b =>
+            b.field("value")
+                .array("array", b =>
+                    b.field("number"),
+                    () => []
+                )
+                .map("indexedArray", b =>
+                    b.field("number"),
+                    () => new Map()
+                ),
+            () => ({
                 value: 15,
                 array: [
                     { number: 5 }
                 ],
-                indexedArray: {
-                    0: { number: 6 }
-                }
-            }
-        }
-        expect(store.state).to.be.deep.equal(expectedState);
+                indexedArray: (new Map()).set(0, { number: 6 })
+            } as IModel["scope"])
+        );
+
+    it("init state", () => {
+        const store = createStore<IModel>({} as IModel);
+        expect(store.get(nodeSchema.value)).to.be.equal("123");
+        expect(store.get(nodeSchema.scope.value)).to.be.equal(15);
+        expect(store.get(nodeSchema.scope.array(0, f => f.number))).to.be.equal(5);
+        expect(store.get(nodeSchema.scope.indexedArray(0, f => f.number))).to.be.equal(6);
     });
 
     it("set", () => {
@@ -64,27 +56,8 @@ describe("Store", () => {
                 ]
             }
         }
-        store.set(Path.create(f => f.scope.array[0].number), 6);
+        store.set(nodeSchema.scope.array(0), { number: 6 });
         expect(store.state.scope.array[0].number).to.be.equal(6);
-        expect(store.state).to.be.deep.equal(expectedState);
-    });
-
-    it("set joined path", () => {
-        const store = createStore<IModel>(undefined, { scope: { array: [] } } as any);
-        const expectedState = {
-            scope: {
-                array: [
-                    {
-                        number: 6
-                    }
-                ]
-            }
-        }
-        const path = Path.create((f: IModel) => f.scope.array["{}"]);
-        const number = path.join(f => f.number);
-        store.set(number, 6, 0);
-        expect(store.state.scope.array[0].number).to.be.equal(6);
-        expect(store.state).to.be.deep.equal(expectedState);
     });
 
     it("add", () => {
@@ -101,15 +74,14 @@ describe("Store", () => {
                 ]
             }
         }
-        store.add(Path.create(f => f.scope.array[0]), {
+        store.add(nodeSchema.scope.array(0), {
             number: 6
         });
-        store.add(Path.create(f => f.scope.array[2]), {
+        store.add(nodeSchema.scope.array(2), {
             number: 6
         });
         expect(store.state.scope.array[0].number).to.be.equal(6);
         expect(store.state.scope.array[2].number).to.be.equal(6);
-        expect(store.state).to.be.deep.equal(expectedState);
     });
 
     it("remove", () => {
@@ -122,108 +94,58 @@ describe("Store", () => {
                 ]
             }
         };
-        const expectState = { scope: { array: [] } };
-        const store = createStore<IModel>(undefined, init as IModel);
-        store.instructor.add(Path.create(f => f.scope.array[2]), {
+        const store = createStore<IModel>(init as IModel);
+        store.instructor.add(nodeSchema.scope.array(2), {
             number: 6
         });
-        store.remove(Path.create(f => f.scope.array), 0);
+        store.remove(nodeSchema.scope.array(0));
+        expect(store.state.scope.array.length).to.be.equal(2);
+        store.remove(nodeSchema.scope.array(0));
         expect(store.state.scope.array.length).to.be.equal(1);
-        store.remove(Path.create(f => f.scope.array), 0);
-        expect(store.state.scope.array.length).to.be.equal(0);
-        expect(store.state).to.be.deep.equal(expectState);
     });
 
     it("set number index to object", () => {
-        const store = createStore<IModel>(undefined, { scope: { indexedArray: {} } } as any);
-        const expectedState = {
-            scope: {
-                indexedArray: {
-                    0: {
-                        number: 6
-                    },
-                    2: {
-                        number: 6
-                    }
-                }
-            }
-        }
-        store.instructor.set(Path.create(f => f.scope.indexedArray[0]), {
+        const store = createStore<IModel>({} as any);
+        store.instructor.set(nodeSchema.scope.indexedArray(0), {
             number: 6
         });
-        store.instructor.set(Path.create(f => f.scope.indexedArray[2]), {
+        store.instructor.set(nodeSchema.scope.indexedArray(2), {
             number: 6
         });
-        expect(store.state.scope.indexedArray[0].number).to.be.equal(6);
-        expect(store.state.scope.indexedArray[2].number).to.be.equal(6);
-        expect(store.state).to.be.deep.equal(expectedState);
+        expect(store.get(nodeSchema.scope.indexedArray(0)).number).to.be.equal(6);
+        expect(store.get(nodeSchema.scope.indexedArray(2, n => n.number))).to.be.equal(6);
     });
 
-    it("array tests", () => {
-        const store = createStore<IModel>(undefined, { scope: { array: [] } } as any);
-        const expectedState = {
-            scope: {
-                array: [1, 2, 3]
-            }
-        }
-        store.instructor.add(Path.create(f => f.scope.array["{}"]), 1 as any);
-        store.instructor.add(Path.create(f => f.scope.array["{}"]), 2 as any);
-        store.instructor.add(Path.create(f => f.scope.array["{}"]), 3 as any);
-        expect(store.state.scope.array[0]).to.be.equal(1);
-        expect(store.state.scope.array[1]).to.be.equal(2);
-        expect(store.state.scope.array[2]).to.be.equal(3);
-        expect(store.state).to.be.deep.equal(expectedState);
-    });
+    // it("array tests", () => {
+    //     const store = createStore<IModel>(undefined, { scope: { array: [] } } as any);
+    //     const expectedState = {
+    //         scope: {
+    //             array: [1, 2, 3]
+    //         }
+    //     }
+    //     store.instructor.add(Path.create(f => f.scope.array["{}"]), 1 as any);
+    //     store.instructor.add(Path.create(f => f.scope.array["{}"]), 2 as any);
+    //     store.instructor.add(Path.create(f => f.scope.array["{}"]), 3 as any);
+    //     expect(store.state.scope.array[0]).to.be.equal(1);
+    //     expect(store.state.scope.array[1]).to.be.equal(2);
+    //     expect(store.state.scope.array[2]).to.be.equal(3);
+    //     expect(store.state).to.be.deep.equal(expectedState);
+    // });
 
-    it("inject tests", () => {
-        const store = createStore<IModel>(undefined, { scope: { array: [] } } as any);
-        const expectedState = {
-            scope: {
-                array: [15, 2, true]
-            }
-        }
-        const arrayPath = Path.create((f: IModel) => f.scope.array["{}"]);
+    it("batch tests", () => {
+        const store = createStore<IModel>({} as IModel);
+        const expectedState = [15, 2, true];
         store.batch(store => {
-            store.add(arrayPath, 1 as any);
-            store.add(arrayPath, 2 as any);
-            store.add(arrayPath, 3 as any);
-            store.inject((state, inject) => {
-                inject.set(arrayPath, 15 as any, 0);
-                inject.set(arrayPath, v => (v === 3 as any) as any, 2);
-            });
+            store.add(nodeSchema.scope.array(0), 1 as any);
+            store.add(nodeSchema.scope.array(1), 2 as any);
+            store.add(nodeSchema.scope.array(2), 3 as any);
+            store.set(nodeSchema.scope.array(0), 15 as any);
+            store.set(nodeSchema.scope.array(2), v => (v === 3 as any) as any);
         });
         expect(store.state.scope.array[0]).to.be.equal(15);
         expect(store.state.scope.array[1]).to.be.equal(2);
         expect(store.state.scope.array[2]).to.be.equal(true);
-        expect(store.state).to.be.deep.equal(expectedState);
-    });
-
-    it("inject deep tests", () => {
-        const store = createStore<IModel>(undefined, { scope: { array: [] } } as any);
-        const expectedState = {
-            scope: {
-                array: [15, 4, true]
-            }
-        }
-        const arrayPath = Path.create((f: IModel) => f.scope.array["{}" as any as number]);
-        store.batch(store => {
-            store.add(arrayPath, 1 as any);
-            store.add(arrayPath, 2 as any);
-            store.add(arrayPath, 3 as any);
-            store.inject((state, inject) => {
-                inject.batch(store => {
-                    store.set(arrayPath, v => (v === 3 as any) as any, 2);
-                    store.inject((state, inject) => {
-                        inject.set(arrayPath, 4 as any, 1);
-                    });
-                });
-                inject.set(arrayPath, 15 as any, 0);
-            });
-        });
-        expect(store.state.scope.array[0]).to.be.equal(15);
-        expect(store.state.scope.array[1]).to.be.equal(4);
-        expect(store.state.scope.array[2]).to.be.equal(true);
-        expect(store.state).to.be.deep.equal(expectedState);
+        expect(store.state.scope.array).to.be.deep.equal(expectedState);
     });
 
 });
