@@ -3,10 +3,11 @@ Make state managers greate again!
 
 1. Fastest initialization compare to redux
 2. Native SSR support, shared initialization part between requests
-3. Batches and possible undo / redo
-4. You need "Reducer" only when need to describe store relationships
-5. Fastest mutation speed compare to redux
-6. Supports module architecture
+3. Unified api for objects, arrays and maps
+4. Batches and possible undo / redo
+5. You need "Reducer" only when need to describe store relationships
+6. Fastest mutation speed compare to redux
+7. Supports module architecture
 
 [![Travis](https://img.shields.io/travis/Wroud/reistore.svg)](https://travis-ci.org/Wroud/reistore)
 [![codecov](https://codecov.io/gh/Wroud/reistore/branch/master/graph/badge.svg)](https://codecov.io/gh/Wroud/reistore)
@@ -46,6 +47,51 @@ store.set(counter, 1);
 // > Counter value: 1
 const value = store.state.counter;
 // value = 1
+```
+
+### Arrays and Maps
+Reistore provide unified api for working with array and map structures in store.
+```js
+import { 
+  createStore,
+  buildSchema
+} from "reistore";
+
+const store = createStore(); // you can pass initial state here by first argument
+const { schema: { name, friends, skills } } = buildSchema()
+  .field("name", () => "Alex")
+  .array("friends", undefined, () => ["Josie", "Max"])
+  .map("skills", b =>
+    b.field("started", () => "12.03.1990")
+    .field("level", () => "noob"),
+    () => (new Map()).set("wakeboarding", { level: "master", started: "12.03.1998"})
+  );
+
+store.set(name, "Jon");
+store.set(friends(0), "Max");
+store.set(friends(1), "Frodo");
+store.set(skills("sleeping"), { level: "grandmaster", started: "from born" });
+const value = store.state;
+/*
+  {
+    name: "Jon",
+    friends: ["Max", "Frodo"],
+    skills: Map {
+      "wakeboarding" => { level: "master", started: "12.03.1998"},
+      "sleeping" => { level: "grandmaster", started: "from born" }
+    }
+  }
+*/
+
+store.get(friends([0, 1]));
+/*
+  ["Max", "Frodo"]
+*/
+
+store.get(skills(["sleeping", "wakeboarding"], skill => skill.level))
+/*
+  ["grandmaster", "master"]
+*/
 ```
 
 ### Batch API
@@ -97,15 +143,15 @@ function transformator(change, { state, set, apply }) {
 }
 const store = createStore(undefined, transformator);
 
-store.set(path.min, 1);
+store.set(min, 1);
 console.log(store.state);
 // { min: 1, max: 1 }
 
-store.set(path.max, v => v - 10);
+store.set(max, v => v - 10);
 console.log(store.state);
 // { min: -9, max: -9 }
 
-store.set(path.min, -15);
+store.set(min, -15);
 // { min: -15, max: -9 }
 console.log(store.state);
 ```
