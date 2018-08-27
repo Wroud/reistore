@@ -1,4 +1,4 @@
-import { ITransformer, INodeAccessor, NodeValue, INode, ApplyChange, IInstruction, IStore, ICountainer } from "./interfaces";
+import { ITransformer, NodeValue, INode, ApplyChange, IInstruction, IStore, IAccessorContainer } from "./interfaces";
 export declare class Transformer<TState extends object | any[] | Map<any, any>, TScope> implements ITransformer<TState, TScope> {
     private node?;
     private store;
@@ -7,7 +7,7 @@ export declare class Transformer<TState extends object | any[] | Map<any, any>, 
     readonly scope: TScope | undefined;
     readonly state: TState;
     apply(instruction: IInstruction<TState, any>): void;
-    set<TValue>(node: INodeAccessor<TState, INode<TState, any, TValue, any, any>> | ICountainer<INode<TState, any, TValue, any, any>>, value: NodeValue<TValue>): void;
-    add<TValue>(node: INodeAccessor<TState, INode<TState, any, TValue, any, any>> | ICountainer<INode<TState, any, TValue, any, any>>, value: NodeValue<TValue>): void;
-    remove(node: INodeAccessor<TState, INode<TState, any, any, any, any>> | ICountainer<INode<TState, any, any, any, any>>): void;
+    set<TValue>(node: IAccessorContainer<TState, INode<TState, any, TValue, any, any>>, value: NodeValue<TValue>): void;
+    add<TValue>(node: IAccessorContainer<TState, INode<TState, any, TValue, any, any>>, value: NodeValue<TValue>): void;
+    remove(node: IAccessorContainer<TState, INode<TState, any, any, any, any>>): void;
 }

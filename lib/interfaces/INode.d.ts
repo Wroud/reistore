@@ -21,7 +21,6 @@ export interface INode<TRoot, TModel, TValue, TParent extends INode<TRoot, any, 
     name?: string | number | symbol;
     defaultValue?: () => TValue;
     type: NodeType;
-    parent?: TParent;
     root: INode<TRoot, any, any, any, any>;
     chain: INode<TRoot, any, any, any, any>[];
     getFromMultiple(objects: TModel[], args?: NodeArgsMap<TRoot>): (TValue | undefined)[];
@@ -57,18 +56,19 @@ export interface IAccessor<TRoot, TNode extends INode<TRoot, any, any, any, any>
     node: TNode;
     get(state: TRoot): ExtractNodeValue<TNode>;
     set(state: TRoot, value: NodeValue<ExtractNodeSetValue<TNode>>): IUndo<TRoot, TNode>;
-    in(node: INodeAccessor<TRoot, INode<TRoot, any, any, any, any>> | ICountainer<INode<TRoot, any, any, any, any>>, strict: boolean, args?: NodeArgsMap<TRoot>): boolean;
+    in(node: IAccessorContainer<TRoot, INode<TRoot, any, any, any, any>>, strict: boolean, args?: NodeArgsMap<TRoot>): boolean;
 }
 export interface INodeAccessor<TRoot, TNode extends INode<TRoot, any, any, any, any>> extends IAccessor<TRoot, TNode> {
-    in(node: INodeAccessor<TRoot, INode<TRoot, any, any, any, any>> | ICountainer<INode<TRoot, any, any, any, any>>, strict: boolean): boolean;
+    in(node: IAccessorContainer<TRoot, INode<TRoot, any, any, any, any>>, strict: boolean): boolean;
 }
+export declare type IAccessorContainer<TState, TNode extends INode<TState, any, any, any, any>> = INodeAccessor<TState, TNode> | ICountainer<TNode>;
 export interface IUndo<TRoot, TNode extends INode<TRoot, any, any, any, any>> extends INodeAccessor<TRoot, TNode> {
     value: ExtractNodeValue<TNode>;
 }
 export interface ISchemaBuilder<TRoot extends object | any[] | Map<any, any>, TParent extends object | Array<TModel> | Map<any, TModel>, TModel extends object | Array<any> | Map<any, any>, TSchema, TNode extends INode<TRoot, any, TParent, any, any> = INode<TRoot, TRoot, TParent, never, any>> {
     schema: TSchema;
-    field<TValue extends TModel[TKey], TKey extends FilteredKeys<TModel, string | number | boolean>>(key: TKey, defaultValue?: () => TValue): ISchemaBuilder<TRoot, TParent, Exclude<TModel, TKey>, AddKey<TSchema, TKey, Container<TRoot, TParent, TModel, TNode, TValue>>, TNode>;
-    node<TValue extends Extract<TModel[TKey], object>, TKey extends FilteredKeys<TModel, object>, TScope = {}>(key: TKey, builder?: (builder: ISchemaBuilder<TRoot, TModel, TValue, {}, INode<TRoot, TParent, TModel, TNode>>) => ISchemaBuilder<TRoot, TModel, TValue, TScope, INode<TRoot, TParent, TModel, TNode>>, defaultValue?: () => TValue): ISchemaBuilder<TRoot, TParent, Exclude<TModel, TKey>, AddKey<TSchema, TKey, TScope & Container<TRoot, TParent, TModel, TNode, TValue>>, TNode>;
-    array<TValue extends TModel[TKey] extends Array<infer P> ? P : never, TKey extends FilteredKeys<TModel, Array<any>>, TScope = {}>(key: TKey, builder?: (builder: ISchemaBuilder<TRoot, Array<TValue>, TValue, {}, INode<TRoot, TModel, Array<TValue>, INode<TRoot, TParent, TModel, TNode>>>) => ISchemaBuilder<TRoot, Array<TValue>, TValue, TScope, INode<TRoot, TModel, Array<TValue>, INode<TRoot, TParent, TModel, TNode>>>, defaultValue?: () => TModel[TKey]): ISchemaBuilder<TRoot, TParent, Exclude<TModel, TKey>, AddKey<TSchema, TKey, ArgContainer<TRoot, TParent, TModel, TNode, number, TValue[], TValue, TScope>>, TNode>;
-    map<TMapKey extends TModel[TKey] extends Map<infer P, any> ? P : never, TValue extends TModel[TKey] extends Map<any, infer P> ? P : never, TKey extends Exclude<FilteredKeys<TModel, Map<any, any>>, keyof TSchema>, TScope = {}>(key: TKey, builder?: (builder: ISchemaBuilder<TRoot, Map<TMapKey, TValue>, TValue, {}, INode<TRoot, TModel, Map<TMapKey, TValue>, INode<TRoot, TParent, TModel, TNode>>>) => ISchemaBuilder<TRoot, Map<TMapKey, TValue>, TValue, TScope, INode<TRoot, TModel, Map<TMapKey, TValue>, INode<TRoot, TParent, TModel, TNode>>>, defaultValue?: () => TModel[TKey]): ISchemaBuilder<TRoot, TParent, Exclude<TModel, TKey>, AddKey<TSchema, TKey, ArgContainer<TRoot, TParent, TModel, TNode, TMapKey, Map<TMapKey, TValue>, TValue, TScope>>, TNode>;
+    field<TKey extends FilteredKeys<TModel, string | number | boolean>, TValue extends TModel[TKey]>(key: TKey, defaultValue?: () => TValue): ISchemaBuilder<TRoot, TParent, Exclude<TModel, TKey>, AddKey<TSchema, TKey, Container<TRoot, TParent, TModel, TNode, TValue>>, TNode>;
+    node<TKey extends FilteredKeys<TModel, object>, TValue extends Extract<TModel[TKey], object>, TScope = {}>(key: TKey, builder?: (builder: ISchemaBuilder<TRoot, TModel, TValue, {}, INode<TRoot, TParent, TModel, TNode>>) => ISchemaBuilder<TRoot, TModel, TValue, TScope, INode<TRoot, TParent, TModel, TNode>>, defaultValue?: () => TValue): ISchemaBuilder<TRoot, TParent, Exclude<TModel, TKey>, AddKey<TSchema, TKey, TScope & Container<TRoot, TParent, TModel, TNode, TValue>>, TNode>;
+    array<TKey extends FilteredKeys<TModel, Array<any>>, TValue extends TModel[TKey] extends Array<infer P> ? P : never, TScope = {}>(key: TKey, builder?: (builder: ISchemaBuilder<TRoot, Array<TValue>, TValue, {}, INode<TRoot, TModel, Array<TValue>, INode<TRoot, TParent, TModel, TNode>>>) => ISchemaBuilder<TRoot, Array<TValue>, TValue, TScope, INode<TRoot, TModel, Array<TValue>, INode<TRoot, TParent, TModel, TNode>>>, defaultValue?: () => TModel[TKey]): ISchemaBuilder<TRoot, TParent, Exclude<TModel, TKey>, AddKey<TSchema, TKey, ArgContainer<TRoot, TParent, TModel, TNode, number, TValue[], TValue, TScope>>, TNode>;
+    map<TKey extends Exclude<FilteredKeys<TModel, Map<any, any>>, keyof TSchema>, TMapKey extends TModel[TKey] extends Map<infer P, any> ? P : never, TValue extends TModel[TKey] extends Map<any, infer P> ? P : never, TScope = {}>(key: TKey, builder?: (builder: ISchemaBuilder<TRoot, Map<TMapKey, TValue>, TValue, {}, INode<TRoot, TModel, Map<TMapKey, TValue>, INode<TRoot, TParent, TModel, TNode>>>) => ISchemaBuilder<TRoot, Map<TMapKey, TValue>, TValue, TScope, INode<TRoot, TModel, Map<TMapKey, TValue>, INode<TRoot, TParent, TModel, TNode>>>, defaultValue?: () => TModel[TKey]): ISchemaBuilder<TRoot, TParent, Exclude<TModel, TKey>, AddKey<TSchema, TKey, ArgContainer<TRoot, TParent, TModel, TNode, TMapKey, Map<TMapKey, TValue>, TValue, TScope>>, TNode>;
 }

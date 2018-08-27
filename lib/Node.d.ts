@@ -27,9 +27,9 @@ export declare class Node<TRoot, TModel, TValue, TParent extends INode<TRoot, an
     name?: string | number | symbol;
     defaultValue?: () => TValue;
     type: NodeType;
-    parent?: TParent;
     root: INode<TRoot, any, any, any, any>;
     chain: INode<TRoot, any, any, any, any>[];
+    private parent?;
     constructor(parent?: TParent, name?: string | number | symbol, defaultValue?: () => TValue, type?: NodeType);
     getFromMultiple(objects: TModel[], args?: NodeArgsMap<TRoot>): (TValue | undefined)[];
     getFromLink(link: INodeLink<TModel>, args: NodeArgsMap<TRoot> | undefined): any;
@@ -46,6 +46,7 @@ export declare class Node<TRoot, TModel, TValue, TParent extends INode<TRoot, an
     private baseGetArray;
     private mutateObject;
     private getProperty;
+    private logErrorType;
 }
 export declare class SchemaBuilder<TRoot extends object | any[] | Map<any, any>, TParent extends object | Array<TModel> | Map<any, TModel>, TModel extends object | Array<any> | Map<any, any>, TSchema, TNode extends INode<TRoot, any, TParent, any, any> = INode<TRoot, TRoot, TParent, never, any>> {
     schema: TSchema;
