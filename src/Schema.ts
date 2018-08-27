@@ -1,6 +1,5 @@
 import { IInstruction, Transformator, ISchema, IStore } from "./interfaces";
 import { Transformer } from "./Transformer";
-import { InstructionType } from "./enums/InstructionType";
 
 export class Schema<TState extends object | any[] | Map<any, any>> implements ISchema<TState> {
     protected transformator!: Transformator<TState, any>;
@@ -15,12 +14,12 @@ export class Schema<TState extends object | any[] | Map<any, any>> implements IS
         return this as ISchema<TState>;
     }
     transform(store: IStore<TState>, change: IInstruction<TState, any>) {
-        if (this.transformator !== undefined) {
-            const transformer = new Transformer(store, this.applyChange);
-            this.transformator(change, transformer)
-        } else {
+        if (this.transformator === undefined) {
             this.applyChange(store, change);
+            return;
         }
+        const transformer = new Transformer(store, this.applyChange);
+        this.transformator(change, transformer);
     }
     bindSchema(schema: ISchema<TState>) {
         this.scopes.push(schema);
@@ -33,21 +32,14 @@ export class Schema<TState extends object | any[] | Map<any, any>> implements IS
     }
     applyChange(store: IStore<TState>, change: IInstruction<TState, any>) {
         if (this.scopes.length === 0) {
-            const { type, node: node, value } = change;
-            switch (type) {
-                case InstructionType.set:
-                case InstructionType.add:
-                case InstructionType.remove:
-                    if (node) {
-                        store.addChange(node.set(store.state, value));
-                    }
-                    break;
-            }
+            const { node, value } = change;
+            store.addChange(node.set(store.state, value));
             return;
         }
         for (const scope of this.scopes) {
             scope.transform(store, change);
         }
+
     }
 }
 

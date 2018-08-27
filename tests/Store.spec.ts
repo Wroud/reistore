@@ -1,8 +1,7 @@
 import { expect } from "chai";
 import "mocha";
 
-import { createStore, createSchema, createScope } from "../src/";
-import { buildSchema } from "../src/Node";
+import { createStore, buildSchema } from "../src/";
 
 describe("Store", () => {
     interface IArray {

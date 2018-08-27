@@ -31,12 +31,12 @@ export class Scope<TState extends object | any[] | Map<any, any>, TParent, TScop
         return this._schema;
     }
     transform(store: IStore<TState>, change: IInstruction<TState, any>) {
-        if (this.transformator !== undefined) {
-            const transformer = new Transformer(store, this.applyChange, this.node);
-            this.transformator(change, transformer)
-        } else {
+        if (this.transformator === undefined) {
             this.applyChange(store, change);
+            return;
         }
+        const transformer = new Transformer(store, this.applyChange, this.node);
+        this.transformator(change, transformer);
     }
     createScope<TNewScope>(
         node: INode<TState, TScope, TNewScope, any, any> | ICountainer<INode<TState, TScope, TNewScope, any, any>>,

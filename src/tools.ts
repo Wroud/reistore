@@ -1,4 +1,5 @@
 import { IStore } from "./interfaces/IStore";
+import { Store } from "./Store";
 
 export function* exchangeIterator<TValue, TResult>(
     iterator: IterableIterator<TValue>,
@@ -10,5 +11,5 @@ export function* exchangeIterator<TValue, TResult>(
 }
 
 export function isStore<TState extends object | any[] | Map<any, any>>(object): object is IStore<TState> {
-    return "state" in object;
+    return object instanceof Store;
 }

@@ -1,5 +1,5 @@
-import { createStore, createSchema, createScope, InstructionType } from "../../src";
-import { buildSchema } from "../../src/Node";
+import { createStore, createSchema, buildSchema, InstructionType } from "../../src";
+import { ICounterState, IDeepCounterState } from "stmbenchmarks/lib/interfaces/IState";
 
 export const reistoreSuite = ({ variables: { normalizedCount }, initState, helpers: { subscribeChecker } }) => {
     const initStore = (state) => {
@@ -25,9 +25,9 @@ export const reistoreSuite = ({ variables: { normalizedCount }, initState, helpe
             {
                 name: "modify",
                 bench() {
-                    const { schema: { scope: { counter } } } = buildSchema()
+                    const { schema: { scope: { counter } } } = buildSchema<ICounterState>()
                         .node("scope", b =>
-                            b.field("counter", 0)
+                            b.field("counter", () => 0 as number)
                         );
                     const store = initStore(initState.counter());
                     return () => {
@@ -38,9 +38,9 @@ export const reistoreSuite = ({ variables: { normalizedCount }, initState, helpe
             {
                 name: "counter",
                 bench() {
-                    const { schema: { scope: { counter } } } = buildSchema()
+                    const { schema: { scope: { counter } } } = buildSchema<ICounterState>()
                         .node("scope", b =>
-                            b.field("counter", 0)
+                            b.field("counter", () => 0 as number)
                         );
                     const store = initStore(initState.counter());
                     return () => {
@@ -56,13 +56,13 @@ export const reistoreSuite = ({ variables: { normalizedCount }, initState, helpe
             {
                 name: "counter deep",
                 bench() {
-                    const { schema } = buildSchema()
+                    const { schema } = buildSchema<IDeepCounterState>()
                         .node("scope0", b =>
                             b.node("scope1", b =>
                                 b.node("scope2", b =>
                                     b.node("scope3", b =>
                                         b.node("scope4", b =>
-                                            b.field("counter", 0)
+                                            b.field("counter", () => 0 as number)
                                         )
                                     )
                                 )
@@ -85,7 +85,7 @@ export const reistoreSuite = ({ variables: { normalizedCount }, initState, helpe
             {
                 name: "normalized",
                 bench() {
-                    const { schema } = buildSchema()
+                    const { schema } = buildSchema<any>()
                         .map("news")
                         .array("show");
                     const store = createStore(
@@ -120,7 +120,7 @@ export const reistoreSuite = ({ variables: { normalizedCount }, initState, helpe
             {
                 name: "normalized modify",
                 bench() {
-                    const { schema } = buildSchema()
+                    const { schema } = buildSchema<any>()
                         .map("news")
                         .array("show");
                     const store = createStore(
@@ -158,7 +158,7 @@ export const reistoreSuite = ({ variables: { normalizedCount }, initState, helpe
                 bench() {
                     const { subscriber, getCalls } = subscribeChecker();
 
-                    const { schema } = buildSchema()
+                    const { schema } = buildSchema<any>()
                         .map("news")
                         .array("show");
                     const store = createStore(

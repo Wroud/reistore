@@ -1,8 +1,7 @@
 import { expect } from "chai";
 import "mocha";
 
-import { Node, SchemaBuilder, buildSchema } from "../src/Node";
-import { PathNode } from "../src";
+import { PathNode, buildSchema } from "../src";
 
 describe("Node", () => {
     interface ITest {

@@ -32,7 +32,6 @@ export interface INode<
     name?: string | number | symbol;
     defaultValue?: () => TValue;
     type: NodeType;
-    parent?: TParent;
     root: INode<TRoot, any, any, any, any>;
     chain: INode<TRoot, any, any, any, any>[];
 
@@ -133,7 +132,7 @@ export interface IAccessor<TRoot, TNode extends INode<TRoot, any, any, any, any>
     get(state: TRoot): ExtractNodeValue<TNode>;
     set(state: TRoot, value: NodeValue<ExtractNodeSetValue<TNode>>): IUndo<TRoot, TNode>;
     in(
-        node: INodeAccessor<TRoot, INode<TRoot, any, any, any, any>> | ICountainer<INode<TRoot, any, any, any, any>>,
+        node: IAccessorContainer<TRoot, INode<TRoot, any, any, any, any>>,
         strict: boolean,
         args?: NodeArgsMap<TRoot>
     ): boolean;
@@ -141,10 +140,11 @@ export interface IAccessor<TRoot, TNode extends INode<TRoot, any, any, any, any>
 export interface INodeAccessor<TRoot, TNode extends INode<TRoot, any, any, any, any>>
     extends IAccessor<TRoot, TNode> {
     in(
-        node: INodeAccessor<TRoot, INode<TRoot, any, any, any, any>> | ICountainer<INode<TRoot, any, any, any, any>>,
+        node: IAccessorContainer<TRoot, INode<TRoot, any, any, any, any>>,
         strict: boolean
     ): boolean;
 }
+export type IAccessorContainer<TState, TNode extends INode<TState, any, any, any, any>>= INodeAccessor<TState, TNode> | ICountainer<TNode>;
 export interface IUndo<TRoot, TNode extends INode<TRoot, any, any, any, any>>
     extends INodeAccessor<TRoot, TNode> {
     value: ExtractNodeValue<TNode>;
@@ -158,8 +158,8 @@ export interface ISchemaBuilder<
     schema: TSchema;
 
     field<
-        TValue extends TModel[TKey],
-        TKey extends FilteredKeys<TModel, string | number | boolean>
+        TKey extends FilteredKeys<TModel, string | number | boolean>,
+        TValue extends TModel[TKey]
         >(key: TKey, defaultValue?: () => TValue): ISchemaBuilder<
         TRoot,
         TParent,
@@ -168,8 +168,8 @@ export interface ISchemaBuilder<
         TNode>;
 
     node<
-        TValue extends Extract<TModel[TKey], object>,
         TKey extends FilteredKeys<TModel, object>,
+        TValue extends Extract<TModel[TKey], object>,
         TScope = {}>(
             key: TKey,
             builder?: (
@@ -184,8 +184,8 @@ export interface ISchemaBuilder<
         TNode>;
 
     array<
-        TValue extends TModel[TKey] extends Array<infer P> ? P : never,
         TKey extends FilteredKeys<TModel, Array<any>>,
+        TValue extends TModel[TKey] extends Array<infer P> ? P : never,
         TScope = {}>(
             key: TKey,
             builder?: (
@@ -200,9 +200,9 @@ export interface ISchemaBuilder<
         TNode>;
 
     map<
+        TKey extends Exclude<FilteredKeys<TModel, Map<any, any>>, keyof TSchema>,
         TMapKey extends TModel[TKey] extends Map<infer P, any> ? P : never,
         TValue extends TModel[TKey] extends Map<any, infer P> ? P : never,
-        TKey extends Exclude<FilteredKeys<TModel, Map<any, any>>, keyof TSchema>,
         TScope = {}>(
             key: TKey,
             builder?: (
@@ -217,41 +217,3 @@ export interface ISchemaBuilder<
         TNode
         >;
 }
-// interface ITP {
-//     summary: number;
-//     count: number;
-//     isChecked: boolean;
-//     elements: { a: string }[];
-//     elementsMap: Map<number, { c: boolean }>;
-//     scope: {
-//         name: string;
-//     }
-// }
-// const schemaBuilder: ISchemaBuilder<ITP, ITP, ITP> = {} as any;
-// const { schema } = schemaBuilder
-//     .field("summary")
-//     .field("count")
-//     .field("isChecked")
-//     .array("elements", b =>
-//         b.field("a")
-//     )
-//     .map("elementsMap", b =>
-//         b.field("c")
-//     )
-//     .node("scope", b =>
-//         b.field("name")
-//     );
-// store.get(schema.summary); // number
-// store.get(schema.elements); // Array<{ a: string }>
-// store.get(schema.elements()); // { a: string }
-// store.get(schema.elements(15).a); // string
-// store.get(schema.elementsMap); // Map<number, { c: boolean }>
-// store.get(schema.elementsMap()); // { c: boolean }
-// store.get(schema.elementsMap([1, 15]).c); // Array<boolean>
-
-// store.set(schema.summary, 5);
-// store.set(schema.elements, v => [...v]); // immutable update
-// store.set(schema.elements(15), { a: "some" }); // mutate state.elements[15] = { a: "some" }
-// store.set(schema.elementsMap(15).c, false); // mutate state.elementsMap.get(15).c = false
-// store.set(schema.elementsMap([1, 15]).c, true); /* mutate state.elementsMap.get(1).c = true
-//                                                           state.elementsMap.get(15).c = true*/

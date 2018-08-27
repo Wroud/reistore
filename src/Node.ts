@@ -91,9 +91,9 @@ export class Node<
     name?: string | number | symbol;
     defaultValue?: () => TValue;
     type: NodeType;
-    parent?: TParent;
     root: INode<TRoot, any, any, any, any>;
     chain: INode<TRoot, any, any, any, any>[];
+    private parent?: TParent;
     constructor(
         parent?: TParent,
         name?: string | number | symbol,
@@ -112,14 +112,6 @@ export class Node<
             this.chain = [this];
         }
     }
-    // join<TV extends keyof TValue, T extends TValue[TV]>(
-    //     name?: TV,
-    //     type: NodeType = NodeType.node
-    // ): TValue extends object | Array<T> | Map<any, T>
-    //     ? INode<TRoot, TValue, T, this, TMultiple>
-    //     : INode<TRoot, any, T, any, TMultiple> {
-    //     return new Node(this as any, name, type) as any;
-    // }
     getFromMultiple(
         objects: TModel[],
         args?: NodeArgsMap<TRoot>
@@ -207,8 +199,23 @@ export class Node<
                 return true;
             }
             for (let arg of args) {
-                if (arg["1"] !== changeArgs.get(arg["0"])) {
-                    return false;
+                let compare = changeArgs.get(arg["0"]);
+                if (Array.isArray(arg["1"])) {
+                    if (Array.isArray(compare)) {
+                        if (arg["1"].any(e => compare.indexOf(e) < 0)) {
+                            return false;
+                        }
+                    } else {
+                        return false;
+                    }
+                } else {
+                    if (Array.isArray(compare)) {
+                        if (compare.indexOf(arg["1"]) < 0) {
+                            return false;
+                        }
+                    } else if (arg["1"] !== compare) {
+                        return false;
+                    }
                 }
             }
             return true;
@@ -224,8 +231,23 @@ export class Node<
             return true;
         }
         for (let arg of args) {
-            if (arg["1"] !== changeArgs.get(arg["0"])) {
-                return false;
+            let compare = changeArgs.get(arg["0"]);
+            if (Array.isArray(arg["1"])) {
+                if (Array.isArray(compare)) {
+                    if (!arg["1"].any(e => compare.indexOf(e) >= 0)) {
+                        return false;
+                    }
+                } else if (arg["1"].indexOf(compare) < 0) {
+                    return false;
+                }
+            } else {
+                if (Array.isArray(compare)) {
+                    if (compare.indexOf(arg["1"]) < 0) {
+                        return false;
+                    }
+                } else if (arg["1"] !== compare) {
+                    return false;
+                }
             }
         }
         return true;
@@ -262,14 +284,12 @@ export class Node<
                 for (let ina = 0; ina < names.length; ina++) {
                     for (let io = 0; io < link.value.length; io++) {
                         prevValues[ir++] = this.mutateObject(link.value[io], names[ina], value);
-                        // this.mutateObject(link.value[io], names[ina], value)
                     }
                 }
             } else {
                 prevValues = new Array(link.value.length);
                 for (let io = 0; io < link.value.length; io++) {
                     prevValues[io] = this.mutateObject(link.value[io], names, value);
-                    // this.mutateObject(link.value[io], names, value);
                 }
             }
         } else {
@@ -277,11 +297,9 @@ export class Node<
                 prevValues = new Array(names.length);
                 for (let ina = 0; ina < names.length; ina++) {
                     prevValues[ina] = this.mutateObject(link.value, names[ina], value);
-                    // this.mutateObject(link.value, names[ina], value)
                 }
             } else {
                 prevValues = this.mutateObject(link.value, names, value);
-                // this.mutateObject(link.value, names, value);
             }
         }
         return new Undo(
@@ -346,6 +364,8 @@ export class Node<
                     } else {
                         object.set(name, newValue);
                     }
+                } else {
+                    this.logErrorType(name);
                 }
                 break;
             case NodeType.array:
@@ -359,6 +379,8 @@ export class Node<
                     } else {
                         object[name] = newValue;
                     }
+                } else {
+                    this.logErrorType(name);
                 }
                 break;
             default:
@@ -383,6 +405,8 @@ export class Node<
             case NodeType.map:
                 if (isMap<any, TValue>(object)) {
                     return object.get(key);
+                } else {
+                    this.logErrorType(key);
                 }
                 break;
             default:
@@ -392,6 +416,12 @@ export class Node<
                 return object[key];
         }
         return undefined;
+    }
+    private logErrorType(key) {
+        console.groupCollapsed("Trying to get or set value from non Map / array object.");
+        console.error("Key: ", key);
+        console.error("Node: ", this);
+        console.groupEnd();
     }
 }
 

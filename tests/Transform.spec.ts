@@ -1,8 +1,7 @@
 import { expect } from "chai";
 import "mocha";
 
-import { createStore, createSchema, createScope, Instructor, IInstruction, ITransformer, PathNode } from "../src/";
-import { buildSchema } from "../src/Node";
+import { createStore, createSchema, createScope, buildSchema } from "../src/";
 
 describe("Transform", () => {
     interface IArray {
@@ -22,7 +21,7 @@ describe("Transform", () => {
             b.field("value", () => 15 as number)
                 .array("array", b =>
                     b.field("number"),
-                    () => [] as IArray[]
+                    () => []
                 )
                 .map("indexedArray", b =>
                     b.field("number"),
