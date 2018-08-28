@@ -14,25 +14,28 @@ import {
     IUndo,
     PathNode,
     ExtractNodeValue,
-    IAccessorContainer
+    IAccessorContainer,
+    StoreHandler,
+    INodeSubscriber
 } from "./interfaces";
 import { Schema } from "./Schema";
 import { Transformer } from "./Transformer";
 import { isCountainer } from "./Node";
+import { NodeSubscriber } from "./NodeSubscriber";
 
-export class Store<TState extends object | any[] | Map<any, any>>
-    implements IStore<TState> {
-    instructor: IInstructor<TState>;
-    updateHandler: IUpdateHandler<TState>;
-    schema: ISchema<TState>;
-    private updateList!: IUndo<TState, any>[];
-    private transformer: ITransformer<TState, any>;
-    private stateStore: TState;
+export class Store<TRoot extends object | any[] | Map<any, any>>
+    implements IStore<TRoot> {
+    instructor: IInstructor<TRoot>;
+    updateHandler: IUpdateHandler<TRoot>;
+    schema: ISchema<TRoot>;
+    private updateList!: IUndo<TRoot, any>[];
+    private transformer: ITransformer<TRoot, any>;
+    private stateStore: TRoot;
     private _isUpdating: boolean;
     constructor(
-        initState?: TState,
-        schema?: ISchema<TState>,
-        transformator?: Transformator<TState, TState>
+        initState?: TRoot,
+        schema?: ISchema<TRoot>,
+        transformator?: Transformator<TRoot, TRoot>
     ) {
         this._isUpdating = false;
         this.stateStore = initState || {} as any;
@@ -44,11 +47,11 @@ export class Store<TState extends object | any[] | Map<any, any>>
     get state() {
         return this.stateStore;
     }
-    set state(value: TState) {
+    set state(value: TRoot) {
         this.stateStore = value;
     }
-    get<TNode extends INode<TState, any, any, any, any>>(
-        node: IAccessorContainer<TState, TNode>
+    get<TNode extends INode<TRoot, any, any, any, any>>(
+        node: IAccessorContainer<TRoot, TNode>
     ): ExtractNodeValue<TNode> {
         if (isCountainer<TNode>(node)) {
             return node[PathNode].get(this.stateStore);
@@ -56,24 +59,24 @@ export class Store<TState extends object | any[] | Map<any, any>>
             return node.get(this.stateStore);
         }
     }
-    set<TValue, TNode extends INode<TState, any, TValue, any, any>>(
-        node: IAccessorContainer<TState, TNode>,
+    set<TValue, TNode extends INode<TRoot, any, TValue, any, any>>(
+        node: IAccessorContainer<TRoot, TNode>,
         value: NodeValue<TValue>
     ) {
         this.instructor.set(node, value);
     }
-    add<TValue, TNode extends INode<TState, any, TValue, any, any>>(
-        node: IAccessorContainer<TState, TNode>,
+    add<TValue, TNode extends INode<TRoot, any, TValue, any, any>>(
+        node: IAccessorContainer<TRoot, TNode>,
         value: NodeValue<TValue>
     ) {
         this.instructor.add(node, value);
     }
-    remove<TValue, TNode extends INode<TState, any, TValue, any, any>>(
-        node: IAccessorContainer<TState, TNode>
+    remove<TValue, TNode extends INode<TRoot, any, TValue, any, any>>(
+        node: IAccessorContainer<TRoot, TNode>
     ) {
         this.instructor.remove(node);
     }
-    batch(batch: (instructor: IInstructor<TState>) => void) {
+    batch(batch: (instructor: IInstructor<TRoot>) => void) {
         if (this.isUpdating()) {
             return;
         }
@@ -83,7 +86,7 @@ export class Store<TState extends object | any[] | Map<any, any>>
         this.updateHandler.update(this.stateStore, this.updateList);
         this._isUpdating = false;
     }
-    update(instructions: IInstruction<TState, any>) {
+    update(instructions: IInstruction<TRoot, any>) {
         if (this.isUpdating()) {
             return;
         }
@@ -93,14 +96,21 @@ export class Store<TState extends object | any[] | Map<any, any>>
         this.updateHandler.update(this.stateStore, this.updateList);
         this._isUpdating = false;
     }
-    addChange(change: IUndo<TState, any>) {
+    addChange(change: IUndo<TRoot, any>) {
         this.updateList.push(change);
     }
-    subscribe(handler: Handler<TState>) {
-        this.updateHandler.subscribe(handler);
+    subscribe(
+        handler: Handler<TRoot> | StoreHandler<TRoot>,
+        node?: IAccessorContainer<TRoot, INode<TRoot, any, any, any, any>>,
+        strict?: boolean
+    ) {
+        var sub = this.updateHandler.subscribe(handler as any, node as any, strict);
+        if (sub instanceof NodeSubscriber) {
+            return sub as INodeSubscriber<TRoot> as any;
+        }
         return this;
     }
-    unSubscribe(handler: Handler<TState>) {
+    unSubscribe(handler: StoreHandler<TRoot>) {
         this.updateHandler.unSubscribe(handler);
         return this;
     }
@@ -119,6 +129,6 @@ export function createStore<TState extends object | any[] | Map<any, any>>(
     initState?: TState,
     schema?: ISchema<TState>,
     transformator?: Transformator<TState, TState>
-) {
+): IStore<TState> {
     return new Store(initState, schema, transformator);
 }

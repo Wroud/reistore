@@ -43,6 +43,8 @@ export class Schema<TState extends object | any[] | Map<any, any>> implements IS
     }
 }
 
-export function createSchema<TState extends object | any[] | Map<any, any>>(transformator?: Transformator<TState, {}>) {
-    return new Schema<TState>(transformator);
+export function createSchema<TState extends object | any[] | Map<any, any>>(
+    transformator?: Transformator<TState, {}>
+): ISchema<TState> {
+    return new Schema(transformator);
 }

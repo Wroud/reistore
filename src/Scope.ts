@@ -50,7 +50,7 @@ export function createScope<TState extends object | any[] | Map<any, any>, TMode
     parent: ISchema<TState>,
     node: INode<TState, TModel, TScope, any, any> | ICountainer<INode<TState, TModel, TScope, any, any>>,
     transformator?: Transformator<TState, TScope>
-) {
+): IScope<TState, TModel, TScope> {
     return new Scope(parent, node, transformator);
 }
 

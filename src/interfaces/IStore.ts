@@ -1,21 +1,28 @@
-import { IUpdateHandler, Handler } from "./IUpdateHandler";
+import { IUpdateHandler, Handler, StoreHandler, INodeSubscriber } from "./IUpdateHandler";
 import { IInstructor } from "./IInstructor";
 import { IInstruction } from "./IInstruction";
-import { INode, INodeAccessor, ExtractNodeValue, IUndo, ICountainer } from "./INode";
+import { INode, ExtractNodeValue, IUndo, IAccessorContainer } from "./INode";
 import { ISchema } from "./ISchema";
 
-export interface IStore<TState extends object | any[] | Map<any, any>>
-    extends IInstructor<TState> {
-    state: TState;
-    instructor: IInstructor<TState>;
-    updateHandler: IUpdateHandler<TState>;
-    schema: ISchema<TState>;
-    get<TNode extends INode<TState, any, any, any, any>>(
-        node: INodeAccessor<TState, TNode> | ICountainer<TNode>
+export interface IStore<TRoot extends object | any[] | Map<any, any>>
+    extends IInstructor<TRoot> {
+    state: TRoot;
+    instructor: IInstructor<TRoot>;
+    updateHandler: IUpdateHandler<TRoot>;
+    schema: ISchema<TRoot>;
+    get<TNode extends INode<TRoot, any, any, any, any>>(
+        node: IAccessorContainer<TRoot, TNode>
     ): ExtractNodeValue<TNode>;
-    update(instruction: IInstruction<TState, any>);
-    batch(batch: (instructor: IInstructor<TState>) => void);
-    addChange(change: IUndo<TState, any>);
-    subscribe(handler: Handler<TState>): this;
-    unSubscribe(handler: Handler<TState>): this;
+    update(instruction: IInstruction<TRoot, any>);
+    batch(batch: (instructor: IInstructor<TRoot>) => void);
+    addChange(change: IUndo<TRoot, any>);
+    subscribe(
+        handler: StoreHandler<TRoot>
+    ): this;
+    subscribe(
+        handler: Handler<TRoot>,
+        node: IAccessorContainer<TRoot, INode<TRoot, any, any, any, any>>,
+        strict?: boolean
+    ): INodeSubscriber<TRoot>;
+    unSubscribe(handler: StoreHandler<TRoot>): this;
 }

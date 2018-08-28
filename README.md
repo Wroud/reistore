@@ -42,8 +42,16 @@ store.subscribe((state, changes) => {
     console.log("Counter value: ", state.counter);
   }
 });
+// or you can subscribe directly to counter changes
+store.subscribe(
+  (state, change) => {
+    console.log("Counter value: ", change.value);
+  },
+  counter
+)
 
 store.set(counter, 1);
+// > Counter value: 1
 // > Counter value: 1
 const value = store.state.counter;
 // value = 1

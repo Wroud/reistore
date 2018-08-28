@@ -33,6 +33,7 @@ export interface INode<
     defaultValue?: () => TValue;
     type: NodeType;
     root: INode<TRoot, any, any, any, any>;
+    parent?: TParent;
     chain: INode<TRoot, any, any, any, any>[];
 
     getFromMultiple(

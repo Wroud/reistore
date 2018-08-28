@@ -93,7 +93,7 @@ export class Node<
     type: NodeType;
     root: INode<TRoot, any, any, any, any>;
     chain: INode<TRoot, any, any, any, any>[];
-    private parent?: TParent;
+    parent?: TParent;
     constructor(
         parent?: TParent,
         name?: string | number | symbol,
@@ -198,11 +198,11 @@ export class Node<
             if (changeArgs === undefined || args === undefined) {
                 return true;
             }
-            for (let arg of args) {
-                let compare = changeArgs.get(arg["0"]);
+            for (let arg of changeArgs) {
+                let compare = args.get(arg["0"]);
                 if (Array.isArray(arg["1"])) {
                     if (Array.isArray(compare)) {
-                        if (arg["1"].any(e => compare.indexOf(e) < 0)) {
+                        if (arg["1"].some(e => compare.indexOf(e) < 0)) {
                             return false;
                         }
                     } else {
@@ -230,11 +230,11 @@ export class Node<
         if (changeArgs === undefined || args === undefined) {
             return true;
         }
-        for (let arg of args) {
-            let compare = changeArgs.get(arg["0"]);
+        for (let arg of changeArgs) {
+            let compare = args.get(arg["0"]);
             if (Array.isArray(arg["1"])) {
                 if (Array.isArray(compare)) {
-                    if (!arg["1"].any(e => compare.indexOf(e) >= 0)) {
+                    if (!arg["1"].some(e => compare.indexOf(e) >= 0)) {
                         return false;
                     }
                 } else if (arg["1"].indexOf(compare) < 0) {
