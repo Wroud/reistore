@@ -16,7 +16,7 @@ describe("Store", () => {
         }
     }
     const { schema: nodeSchema } = buildSchema<IModel>()
-        .field("value", () => "123")
+        .field("value", () => "123" as string)
         .node("scope", b =>
             b.field("value")
                 .array("array", b =>
@@ -44,19 +44,76 @@ describe("Store", () => {
         expect(store.get(nodeSchema.scope.indexedArray(0, f => f.number))).to.be.equal(6);
     });
 
+    it("subscription", () => {
+        const store = createStore<IModel>();
+        let storeUpdates = 0;
+        let scopeValueUpdates = 0;
+        let valueUpdates = 0;
+        let scopeUpdates = 0;
+        const storeHandler = () => storeUpdates++;
+        store.subscribe(storeHandler);
+        const sub = store.subscribe(
+            () => valueUpdates++,
+            nodeSchema.value,
+            true
+        );
+        const subScope = store.subscribe(
+            () => scopeUpdates++,
+            nodeSchema.scope
+        );
+        var subChild = store.subscribe(
+            () => scopeValueUpdates++,
+            nodeSchema.scope.value
+        );
+        store.set(nodeSchema.scope.value, 6);
+        expect(storeUpdates).to.be.equal(1);
+        expect(scopeValueUpdates).to.be.equal(1);
+        expect(scopeUpdates).to.be.equal(1);
+        expect(valueUpdates).to.be.equal(0);
+
+        store.set(nodeSchema.value, "6");
+        expect(storeUpdates).to.be.equal(2);
+        expect(scopeValueUpdates).to.be.equal(1);
+        expect(scopeUpdates).to.be.equal(1);
+        expect(valueUpdates).to.be.equal(1);
+
+        sub.unSubscribe();
+        store.set(nodeSchema.value, "6");
+        expect(storeUpdates).to.be.equal(3);
+        expect(scopeValueUpdates).to.be.equal(1);
+        expect(scopeUpdates).to.be.equal(1);
+        expect(valueUpdates).to.be.equal(1);
+
+        subChild.unSubscribe();
+        store.set(nodeSchema.scope.value, 2);
+        expect(storeUpdates).to.be.equal(4);
+        expect(scopeValueUpdates).to.be.equal(1);
+        expect(scopeUpdates).to.be.equal(2);
+        expect(valueUpdates).to.be.equal(1);
+
+        subScope.unSubscribe();
+        store.set(nodeSchema.scope.value, 2);
+        expect(storeUpdates).to.be.equal(5);
+        expect(scopeValueUpdates).to.be.equal(1);
+        expect(scopeUpdates).to.be.equal(2);
+        expect(valueUpdates).to.be.equal(1);
+
+        store.unSubscribe(storeHandler);
+        store.set(nodeSchema.scope.value, 2);
+        expect(storeUpdates).to.be.equal(5);
+        expect(scopeValueUpdates).to.be.equal(1);
+        expect(valueUpdates).to.be.equal(1);
+    });
+
     it("set", () => {
         const store = createStore<IModel>();
-        const expectedState = {
-            scope: {
-                array: [
-                    {
-                        number: 6
-                    }
-                ]
-            }
-        }
         store.set(nodeSchema.scope.array(0), { number: 6 });
         expect(store.state.scope.array[0].number).to.be.equal(6);
+        store.set(nodeSchema.scope.indexedArray(0), { number: 6 });
+        expect(store.state.scope.array[0].number).to.be.equal(6);
+        store.set(nodeSchema.scope.indexedArray(0, s => s.number), 6);
+        expect(store.get(nodeSchema.scope.indexedArray(0, s => s.number))).to.be.equal(6);
+        expect(store.get(nodeSchema.scope.indexedArray(0))).to.be.deep.equal({ number: 6 });
     });
 
     it("add", () => {

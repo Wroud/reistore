@@ -9,6 +9,7 @@ describe("Node", () => {
             b: {
                 c: number;
             };
+            array: { c: number }[];
         };
     }
 
@@ -16,11 +17,24 @@ describe("Node", () => {
         .node("a", b =>
             b.node("b", b =>
                 b.field("c")
+            ).array("array", b =>
+                b.field("c")
             )
         );
     const path0 = schema.a[PathNode];
     const path1 = schema.a.b[PathNode];
+    const path2 = schema.a.array[PathNode];
+    const path3 = schema.a.array(undefined, f => f.c).node;
 
+    it("includes args", () => {
+        expect(schema.a.array(15, s => s.c).in(schema.a.array(15), true)).to.be.equal(false);
+        expect(schema.a.array(15).in(schema.a.array(16), true)).to.be.equal(false);
+        expect(schema.a.array([16, 15]).in(schema.a.array(16), true)).to.be.equal(true);
+        expect(schema.a.array([16, 15], s => s.c).in(schema.a.array(16), false)).to.be.equal(true);
+        expect(schema.a.array([16, 15]).in(schema.a.array(13), true)).to.be.equal(false);
+        expect(schema.a.array([16, 15]).in(schema.a.array([16, 14]), true)).to.be.equal(false);
+        expect(schema.a.array([16, 15]).in(schema.a.array([16, 15]), true)).to.be.equal(true);
+    });
     it("includes closest", () => {
         expect(path0.in(path1, false)).to.be.equal(false);
     });
