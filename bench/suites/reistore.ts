@@ -86,7 +86,10 @@ export const reistoreSuite = ({ variables: { normalizedCount }, initState, helpe
                 name: "normalized",
                 bench() {
                     const { schema } = buildSchema<any>()
-                        .map("news")
+                        .map("news", b =>
+                            b.field("id")
+                                .field("text")
+                        )
                         .array("show");
                     const store = createStore(
                         { news: new Map(), show: [] },
@@ -121,7 +124,10 @@ export const reistoreSuite = ({ variables: { normalizedCount }, initState, helpe
                 name: "normalized modify",
                 bench() {
                     const { schema } = buildSchema<any>()
-                        .map("news")
+                        .map("news", b =>
+                            b.field("id")
+                                .field("text")
+                        )
                         .array("show");
                     const store = createStore(
                         { news: new Map(), show: [] },
@@ -159,7 +165,10 @@ export const reistoreSuite = ({ variables: { normalizedCount }, initState, helpe
                     const { subscriber, getCalls } = subscribeChecker();
 
                     const { schema } = buildSchema<any>()
-                        .map("news")
+                        .map("news", b =>
+                            b.field("id")
+                                .field("text")
+                        )
                         .array("show");
                     const store = createStore(
                         { news: new Map(), show: [] },
@@ -181,17 +190,10 @@ export const reistoreSuite = ({ variables: { normalizedCount }, initState, helpe
                         for (let i = 0; i < normalizedCount; i++) {
                             let adr = schema.news(i);
                             batch.add(adr, { id: i, text: "some news text" + i });
-                            store.subscribe((state, changes) => {
-                                const isChanged = changes.length === 1
-                                    ? changes[0].in(adr, false)
-                                    : changes.some(change => change.in(adr, false));
-                                if (isChanged) {
-                                    subscriber();
-                                }
-                            });
+                            store.subscribe(subscriber, adr);
                         }
                     });
-                    let invokeCount = 0;
+                    let invokeCount = +normalizedCount;
                     return {
                         bench: () => {
                             for (let i = 0; i < normalizedCount; i++) {
