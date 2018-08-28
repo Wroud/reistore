@@ -29,7 +29,7 @@ export declare class Node<TRoot, TModel, TValue, TParent extends INode<TRoot, an
     type: NodeType;
     root: INode<TRoot, any, any, any, any>;
     chain: INode<TRoot, any, any, any, any>[];
-    private parent?;
+    parent?: TParent;
     constructor(parent?: TParent, name?: string | number | symbol, defaultValue?: () => TValue, type?: NodeType);
     getFromMultiple(objects: TModel[], args?: NodeArgsMap<TRoot>): (TValue | undefined)[];
     getFromLink(link: INodeLink<TModel>, args: NodeArgsMap<TRoot> | undefined): any;

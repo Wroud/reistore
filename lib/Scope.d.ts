@@ -9,5 +9,5 @@ export declare class Scope<TState extends object | any[] | Map<any, any>, TParen
     transform(store: IStore<TState>, change: IInstruction<TState, any>): void;
     createScope<TNewScope>(node: INode<TState, TScope, TNewScope, any, any> | ICountainer<INode<TState, TScope, TNewScope, any, any>>, transformator?: Transformator<TState, TNewScope>): IScope<TState, TScope, TNewScope>;
 }
-export declare function createScope<TState extends object | any[] | Map<any, any>, TModel, TScope>(parent: ISchema<TState>, node: INode<TState, TModel, TScope, any, any> | ICountainer<INode<TState, TModel, TScope, any, any>>, transformator?: Transformator<TState, TScope>): Scope<TState, TModel, TScope>;
+export declare function createScope<TState extends object | any[] | Map<any, any>, TModel, TScope>(parent: ISchema<TState>, node: INode<TState, TModel, TScope, any, any> | ICountainer<INode<TState, TModel, TScope, any, any>>, transformator?: Transformator<TState, TScope>): IScope<TState, TModel, TScope>;
 export declare function isScope<TStore extends object | any[] | Map<any, any>, TModel, TScope>(object: any): object is IScope<TStore, TModel, TScope>;

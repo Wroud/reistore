@@ -22,6 +22,7 @@ export interface INode<TRoot, TModel, TValue, TParent extends INode<TRoot, any, 
     defaultValue?: () => TValue;
     type: NodeType;
     root: INode<TRoot, any, any, any, any>;
+    parent?: TParent;
     chain: INode<TRoot, any, any, any, any>[];
     getFromMultiple(objects: TModel[], args?: NodeArgsMap<TRoot>): (TValue | undefined)[];
     getFromLink(link: INodeLink<TModel>, args?: NodeArgsMap<TRoot>): TValue | undefined | (TValue | undefined)[];

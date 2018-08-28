@@ -9,4 +9,4 @@ export declare class Schema<TState extends object | any[] | Map<any, any>> imple
     unBindSchema(schema: ISchema<TState>): void;
     applyChange(store: IStore<TState>, change: IInstruction<TState, any>): void;
 }
-export declare function createSchema<TState extends object | any[] | Map<any, any>>(transformator?: Transformator<TState, {}>): Schema<TState>;
+export declare function createSchema<TState extends object | any[] | Map<any, any>>(transformator?: Transformator<TState, {}>): ISchema<TState>;
