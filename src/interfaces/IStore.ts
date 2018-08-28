@@ -1,8 +1,9 @@
-import { IUpdateHandler, Handler, StoreHandler, INodeSubscriber } from "./IUpdateHandler";
+import { IUpdateHandler, Handler, StoreHandler } from "./IUpdateHandler";
 import { IInstructor } from "./IInstructor";
 import { IInstruction } from "./IInstruction";
 import { INode, ExtractNodeValue, IUndo, IAccessorContainer } from "./INode";
 import { ISchema } from "./ISchema";
+import { INodeSubscriber } from "./INodeSubscriber";
 
 export interface IStore<TRoot extends object | any[] | Map<any, any>>
     extends IInstructor<TRoot> {
