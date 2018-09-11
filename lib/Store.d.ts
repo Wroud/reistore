@@ -9,11 +9,11 @@ export declare class Store<TRoot extends object | any[] | Map<any, any>> impleme
     private _isUpdating;
     constructor(initState?: TRoot, schema?: ISchema<TRoot>, transformator?: Transformator<TRoot, TRoot>);
     state: TRoot;
-    get<TNode extends INode<TRoot, any, any, any, any>>(node: IAccessorContainer<TRoot, TNode>): ExtractNodeValue<TNode>;
-    set<TValue, TNode extends INode<TRoot, any, TValue, any, any>>(node: IAccessorContainer<TRoot, TNode>, value: NodeValue<TValue>): void;
-    add<TValue, TNode extends INode<TRoot, any, TValue, any, any>>(node: IAccessorContainer<TRoot, TNode>, value: NodeValue<TValue>): void;
-    remove<TValue, TNode extends INode<TRoot, any, TValue, any, any>>(node: IAccessorContainer<TRoot, TNode>): void;
-    batch(batch: (instructor: IInstructor<TRoot>) => void): void;
+    get: <TNode extends INode<TRoot, any, any, any, any>>(node: IAccessorContainer<TRoot, TNode>) => ExtractNodeValue<TNode>;
+    set: <TValue, TNode extends INode<TRoot, any, TValue, any, any>>(node: IAccessorContainer<TRoot, TNode>, value: NodeValue<TValue>) => void;
+    add: <TValue, TNode extends INode<TRoot, any, TValue, any, any>>(node: IAccessorContainer<TRoot, TNode>, value: NodeValue<TValue>) => void;
+    remove: <TValue, TNode extends INode<TRoot, any, TValue, any, any>>(node: IAccessorContainer<TRoot, TNode>) => void;
+    batch: (batch: (instructor: IInstructor<TRoot>) => void) => void;
     update(instructions: IInstruction<TRoot, any>): void;
     addChange(change: IUndo<TRoot, any>): void;
     subscribe(handler: Handler<TRoot> | StoreHandler<TRoot>, node?: IAccessorContainer<TRoot, INode<TRoot, any, any, any, any>>, strict?: boolean): any;
