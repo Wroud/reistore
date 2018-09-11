@@ -50,33 +50,33 @@ export class Store<TRoot extends object | any[] | Map<any, any>>
     set state(value: TRoot) {
         this.stateStore = value;
     }
-    get<TNode extends INode<TRoot, any, any, any, any>>(
+    get = <TNode extends INode<TRoot, any, any, any, any>>(
         node: IAccessorContainer<TRoot, TNode>
-    ): ExtractNodeValue<TNode> {
+    ): ExtractNodeValue<TNode> => {
         if (isCountainer<TNode>(node)) {
             return node[PathNode].get(this.stateStore);
         } else {
             return node.get(this.stateStore);
         }
     }
-    set<TValue, TNode extends INode<TRoot, any, TValue, any, any>>(
+    set = <TValue, TNode extends INode<TRoot, any, TValue, any, any>>(
         node: IAccessorContainer<TRoot, TNode>,
         value: NodeValue<TValue>
-    ) {
+    ) => {
         this.instructor.set(node, value);
     }
-    add<TValue, TNode extends INode<TRoot, any, TValue, any, any>>(
+    add = <TValue, TNode extends INode<TRoot, any, TValue, any, any>>(
         node: IAccessorContainer<TRoot, TNode>,
         value: NodeValue<TValue>
-    ) {
+    ) => {
         this.instructor.add(node, value);
     }
-    remove<TValue, TNode extends INode<TRoot, any, TValue, any, any>>(
+    remove = <TValue, TNode extends INode<TRoot, any, TValue, any, any>>(
         node: IAccessorContainer<TRoot, TNode>
-    ) {
+    ) => {
         this.instructor.remove(node);
     }
-    batch(batch: (instructor: IInstructor<TRoot>) => void) {
+    batch = (batch: (instructor: IInstructor<TRoot>) => void) => {
         if (this.isUpdating()) {
             return;
         }
