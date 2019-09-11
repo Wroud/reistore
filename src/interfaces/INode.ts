@@ -3,9 +3,9 @@ export type NodeArg =
     string
     | number
     | symbol
-    | (string | number | symbol)[];
+    | Array<string | number | symbol>;
 export type NodeArgsMap<TRoot> = Map<INode<TRoot, any, any, any, any>, any>;
-export type GetNodeValue<T, TMultiple extends boolean> = TMultiple extends true ? (T | undefined)[] : (T | undefined);
+export type GetNodeValue<T, TMultiple extends boolean> = TMultiple extends true ? Array<T | undefined> : (T | undefined);
 export interface INodeResult<T, TMultiple extends boolean = false> {
     isMultiple: boolean;
     value: GetNodeValue<T, TMultiple>;
@@ -34,16 +34,16 @@ export interface INode<
     type: NodeType;
     root: INode<TRoot, any, any, any, any>;
     parent?: TParent;
-    chain: INode<TRoot, any, any, any, any>[];
+    chain: Array<INode<TRoot, any, any, any, any>>;
 
     getFromMultiple(
         objects: TModel[],
         args?: NodeArgsMap<TRoot>
-    ): (TValue | undefined)[];
+    ): Array<TValue | undefined>;
     getFromLink(
         link: INodeLink<TModel>,
         args?: NodeArgsMap<TRoot>
-    ): TValue | undefined | (TValue | undefined)[];
+    ): TValue | undefined | Array<TValue | undefined>;
     getFromNode<TR = TRoot>(
         object: TR,
         from: INode<TRoot, TR, any, any, any>,
@@ -57,7 +57,7 @@ export interface INode<
         object: TR,
         value: NodeValue<TValue>,
         to: INode<TRoot, TR, any, any, any>,
-        args?: NodeArgsMap<TRoot>,
+        args?: NodeArgsMap<TRoot>
     ): IUndo<TRoot, this>;
     set(
         object: TRoot,
@@ -91,7 +91,7 @@ export interface IArgContainer<
     <TA extends TKey | TKey[], TNode extends INode<TRoot, any, any, any, any> = TValue extends ICountainer<infer N> ? N : undefined>(
         arg?: TA,
         next?: (
-            node: TA extends Array<any> ? MarkMultiple<TValue> : TValue
+            node: TA extends any[] ? MarkMultiple<TValue> : TValue
         ) => ICountainer<TNode> | INodeAccessor<TRoot, TNode>
     ): INodeAccessor<TRoot, TNode>;
 }
@@ -152,8 +152,8 @@ export interface IUndo<TRoot, TNode extends INode<TRoot, any, any, any, any>>
 }
 export interface ISchemaBuilder<
     TRoot extends object | any[] | Map<any, any>,
-    TParent extends object | Array<TModel> | Map<any, TModel>,
-    TModel extends object | Array<any> | Map<any, any>,
+    TParent extends object | TModel[] | Map<any, TModel>,
+    TModel extends object | any[] | Map<any, any>,
     TSchema,
     TNode extends INode<TRoot, any, TParent, any, any> = INode<TRoot, TRoot, TParent, never, any>> {
     schema: TSchema;
@@ -185,13 +185,13 @@ export interface ISchemaBuilder<
         TNode>;
 
     array<
-        TKey extends FilteredKeys<TModel, Array<any>>,
+        TKey extends FilteredKeys<TModel, any[]>,
         TValue extends TModel[TKey] extends Array<infer P> ? P : never,
         TScope = {}>(
             key: TKey,
             builder?: (
-                builder: ISchemaBuilder<TRoot, Array<TValue>, TValue, {}, INode<TRoot, TModel, Array<TValue>, INode<TRoot, TParent, TModel, TNode>>>
-            ) => ISchemaBuilder<TRoot, Array<TValue>, TValue, TScope, INode<TRoot, TModel, Array<TValue>, INode<TRoot, TParent, TModel, TNode>>>,
+                builder: ISchemaBuilder<TRoot, TValue[], TValue, {}, INode<TRoot, TModel, TValue[], INode<TRoot, TParent, TModel, TNode>>>
+            ) => ISchemaBuilder<TRoot, TValue[], TValue, TScope, INode<TRoot, TModel, TValue[], INode<TRoot, TParent, TModel, TNode>>>,
             defaultValue?: () => TModel[TKey]
         ): ISchemaBuilder<
         TRoot,

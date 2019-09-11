@@ -1,4 +1,4 @@
-import { INodeAccessor, INode, IUndo } from "./INode";
+import { INode, INodeAccessor, IUndo } from "./INode";
 import { Handler } from "./IUpdateHandler";
 
 export interface INodeSubscriber<TRoot> {

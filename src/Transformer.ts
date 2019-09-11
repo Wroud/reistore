@@ -27,23 +27,23 @@ export class Transformer<TState extends object | any[] | Map<any, any>, TScope>
         return this.store.state;
     }
     apply = (instruction: IInstruction<TState, any>) => {
-        this.applyChange(this.store, instruction);
+        this.applyChange(instruction);
     }
     set = <TValue>(
         node: IAccessorContainer<TState, INode<TState, any, TValue, any, any>>,
         value: NodeValue<TValue>
     ) => {
-        this.applyChange(this.store, new Instruction(InstructionType.set, isCountainer(node) ? node[PathNode] : node, value));
+        this.applyChange(new Instruction(InstructionType.set, isCountainer(node) ? node[PathNode] : node, value));
     }
     add = <TValue>(
         node: IAccessorContainer<TState, INode<TState, any, TValue, any, any>>,
         value: NodeValue<TValue>
     ) => {
-        this.applyChange(this.store, new Instruction(InstructionType.add, isCountainer(node) ? node[PathNode] : node, value));
+        this.applyChange(new Instruction(InstructionType.add, isCountainer(node) ? node[PathNode] : node, value));
     }
     remove = (
         node: IAccessorContainer<TState, INode<TState, any, any, any, any>>
     ) => {
-        this.applyChange(this.store, new Instruction(InstructionType.remove, isCountainer(node) ? node[PathNode] : node, null));
+        this.applyChange(new Instruction(InstructionType.remove, isCountainer(node) ? node[PathNode] : node, null));
     }
 }

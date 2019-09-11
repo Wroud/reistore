@@ -16,6 +16,40 @@ describe("Scope", () => {
             indexedArray: Map<number, IArray>
         }
     }
+    interface INews {
+        id: string;
+        title: string;
+    }
+    interface ITest {
+        newsList: string[];
+        news: Map<string, INews>;
+    }
+    const { schema } = buildSchema<ITest>()
+        .array("newsList", undefined, () => [])
+        .map("news", builder => builder
+            .field("id")
+            .field("title")
+            .onRemove(s => s.newsList, e => e.id)
+            .onAdd(s => s.newsList, e => e.id)
+            .computed("isVisible", (store, schema, parent) => {
+                const newsList = store.get(schema.newsList);
+                const { id } = store.get(schema.news(parent.id));
+                return newsList.indexOf(id) > -1;
+            })
+
+            .onAdd((store, element) => {
+                let list = store.get(schema.newsList);
+                if (list.indexOf(element.id) === -1) {
+                    store.add(schema.newsList(list.length), element.id);
+                }
+            })
+            .onRemove((store, element) => {
+                let id = store.get(schema.newsList).indexOf(element.id);
+                if (id > -1) {
+                    store.remove(schema.newsList(id));
+                }
+            }),
+            () => new Map());
     const { schema: nodeSchema } = buildSchema<IModel>()
         .field("value")
         .node("scope", b =>

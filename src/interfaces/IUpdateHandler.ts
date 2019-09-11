@@ -1,11 +1,11 @@
-import { IUndo, INode, IAccessorContainer } from "./INode";
-import { INodeUpdateHandler } from "./INodeUpdateHandler";
+import { IAccessorContainer, INode, IUndo } from "./INode";
 import { INodeSubscriber } from "./INodeSubscriber";
+import { INodeUpdateHandler } from "./INodeUpdateHandler";
 
 export type Handler<TState> = (state: TState, change: IUndo<TState, any>) => void;
-export type StoreHandler<TState> = (state: TState, changes: IUndo<TState, any>[]) => void;
+export type StoreHandler<TState> = (state: TState, changes: Array<IUndo<TState, any>>) => void;
 export interface IUpdateHandler<TRoot> {
-    update(state: TRoot, updateList: IUndo<TRoot, any>[]): void;
+    update(state: TRoot, updateList: Array<IUndo<TRoot, any>>): void;
     getNodeHandler(node: INode<TRoot, any, any, any, any>): INodeUpdateHandler<TRoot> | undefined;
     subscribe(
         handler: StoreHandler<TRoot>

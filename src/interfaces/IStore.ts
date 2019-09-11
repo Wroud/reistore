@@ -1,22 +1,19 @@
-import { IUpdateHandler, Handler, StoreHandler } from "./IUpdateHandler";
-import { IInstructor } from "./IInstructor";
 import { IInstruction } from "./IInstruction";
-import { INode, ExtractNodeValue, IUndo, IAccessorContainer } from "./INode";
-import { ISchema } from "./ISchema";
+import { IInstructor } from "./IInstructor";
+import { ExtractNodeValue, IAccessorContainer, INode } from "./INode";
 import { INodeSubscriber } from "./INodeSubscriber";
+import { Handler, IUpdateHandler, StoreHandler } from "./IUpdateHandler";
 
-export interface IStore<TRoot extends object | any[] | Map<any, any>>
+export interface IStore<TRoot>
     extends IInstructor<TRoot> {
     state: TRoot;
     instructor: IInstructor<TRoot>;
     updateHandler: IUpdateHandler<TRoot>;
-    schema: ISchema<TRoot>;
     get<TNode extends INode<TRoot, any, any, any, any>>(
         node: IAccessorContainer<TRoot, TNode>
     ): ExtractNodeValue<TNode>;
     update(instruction: IInstruction<TRoot, any>);
     batch(batch: (instructor: IInstructor<TRoot>) => void);
-    addChange(change: IUndo<TRoot, any>);
     subscribe(
         handler: StoreHandler<TRoot>
     ): this;
